@@ -1,0 +1,1857 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Lift Variation Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a lab bench. Instrument rail (the squat setup) on the left, specimen stage and readouts on the right; one column on a phone. */
+:root {
+  --bg: #EBEEF1; --surface: #F8FAFB; --sunk: #DFE5EA; --ink: #141C24; --ink2: #4B5A68; --line: #C3CCD5;
+  --accent: #1D4ED8; --accent-ink: #FFFFFF; --accent-soft: #DCE6FB;
+  --fig: #2A3642; --body: #D8DFE5; --plate: #1D4ED8;
+  --h0: #CFD8DF; --h1: #F1D38B; --h2: #EC9A3C; --h3: #D8492B; --h4: #8E1730;
+  --up: #B5381B; --down: #1F63B0; --warn: #8A5200; --warn-bg: #FBEFD6;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-data: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1419; --surface: #171E26; --sunk: #0B1015; --ink: #E6ECF1; --ink2: #97A6B4; --line: #2B3641;
+    --accent: #82A6FF; --accent-ink: #0B1220; --accent-soft: #1B2740;
+    --fig: #C9D3DC; --body: #232D37; --plate: #82A6FF;
+    --h0: #2C3742; --h1: #6B5221; --h2: #C4832A; --h3: #EE6836; --h4: #FF3F58;
+    --up: #FF8A66; --down: #7DB8F0; --warn: #F2B45A; --warn-bg: #2B2311;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1419; --surface: #171E26; --sunk: #0B1015; --ink: #E6ECF1; --ink2: #97A6B4; --line: #2B3641;
+  --accent: #82A6FF; --accent-ink: #0B1220; --accent-soft: #1B2740;
+  --fig: #C9D3DC; --body: #232D37; --plate: #82A6FF;
+  --h0: #2C3742; --h1: #6B5221; --h2: #C4832A; --h3: #EE6836; --h4: #FF3F58;
+  --up: #FF8A66; --down: #7DB8F0; --warn: #F2B45A; --warn-bg: #2B2311;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--font-body); }
+.page { max-width: 1320px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3, p, ul, fieldset, legend { margin: 0; padding: 0; }
+fieldset { border: 0; min-width: 0; }
+a { color: var(--accent); }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.label { font: 600 11.5px/1.2 var(--font-body); letter-spacing: .09em; text-transform: uppercase; color: var(--ink2); }
+
+/* masthead */
+.mast { display: grid; gap: 10px; margin-bottom: 22px; }
+.mast h1 { font: 700 clamp(34px, 5vw, 50px)/1 var(--font-display); letter-spacing: .01em; text-transform: uppercase; text-wrap: balance; }
+.lede { max-width: 66ch; color: var(--ink2); font-size: 16px; }
+.liftbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 4px; }
+.seg.big { display: inline-grid; background: var(--surface); }
+.seg.big button { font: 600 21px/1 var(--font-display); letter-spacing: .07em; text-transform: uppercase; padding: 10px clamp(12px, 3vw, 26px); }
+.pat { display: grid; gap: 10px; }
+.knurl { height: 9px; margin-top: 6px; background:
+  repeating-linear-gradient(45deg, var(--line) 0 1px, transparent 1px 5px),
+  repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 5px); border-block: 1px solid var(--line); }
+
+/* bench */
+.bench { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "rail" "rest"; }
+.rail { grid-area: rail; } .stage { grid-area: stage; } .rest { grid-area: rest; }
+@media (min-width: 960px) {
+  .bench { grid-template-columns: 332px minmax(0, 1fr); grid-template-areas: "rail stage" "rail rest"; align-items: start; }
+  .rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100dvh - 24px); overflow-y: auto; }
+  .mini { display: none !important; }
+}
+
+/* rail */
+.rail { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; display: grid; gap: 0; min-width: 0; }
+.blk { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.rail > .blk:last-child { border-bottom: 0; }
+.setups { display: grid; gap: 10px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.seg button { background: transparent; border: 0; border-right: 1px solid var(--line); padding: 7px 6px; cursor: pointer; font: 600 14px/1.2 var(--font-body); color: var(--ink2); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.check { display: inline-flex; gap: 7px; align-items: center; cursor: pointer; font-size: 14px; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; font-size: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 13px; line-height: 1.3; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.lifters { display: grid; gap: 6px; padding-top: 2px; }
+.lifters .hint b { color: var(--ink); font-weight: 600; }
+.lifters .hint a { white-space: nowrap; }
+.rail fieldset { display: grid; gap: 11px; }
+.rail legend { font: 600 17px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; float: left; width: 100%; }
+.ctl { display: grid; gap: 3px; min-width: 0; clear: both; }
+.ctl-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.ctl-head label { font-weight: 600; font-size: 14px; }
+.ctl-head output { font: 500 12.5px/1.3 var(--font-data); color: var(--ink2); text-align: right; }
+input[type="range"] { width: 100%; margin: 0; height: 24px; accent-color: var(--accent); }
+input[type="range"]:disabled { opacity: .55; }
+.ticks { position: relative; height: 15px; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); }
+.ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.ticks span.first { transform: none; } .ticks span.last { transform: translateX(-100%); }
+.hint { font-size: 12.5px; color: var(--ink2); line-height: 1.4; }
+.mini { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+.mini div { display: grid; gap: 1px; } .mini b { font: 500 16px/1.1 var(--font-data); }
+
+/* stage */
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; display: grid; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 720px) { .stage { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); } }
+.pane { padding: 16px; min-width: 0; display: grid; gap: 10px; align-content: start; }
+.pane + .pane { border-top: 1px solid var(--line); }
+@media (min-width: 720px) { .pane + .pane { border-top: 0; border-left: 1px solid var(--line); } }
+.pane-head { display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: space-between; align-items: center; }
+.pane h2, .sec h2 { font: 600 21px/1.1 var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
+.pane { container-type: inline-size; }
+.views { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-items: end; }
+.topwrap { display: grid; gap: 4px; max-width: 280px; }
+@container (min-width: 430px) { .views { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } .topwrap { max-width: none; } }
+/* fixed-shape boxes, so switching views or settings never resizes the stage */
+#sideView { aspect-ratio: 300 / 346; }
+#sideView.wide { aspect-ratio: 1 / 1; }
+#topView { aspect-ratio: 250 / 306; }
+#sideView svg, #topView svg { width: 100%; height: 100%; }
+.seg.small { justify-self: start; }
+.seg.small button { padding: 4px 10px; font-size: 12px; }
+svg { display: block; width: 100%; height: auto; }
+.cap { font-size: 13px; color: var(--ink2); }
+.rep { display: flex; gap: 12px; align-items: start; }
+.rep .btn { min-width: 92px; padding-block: 8px; }
+.scrubwrap { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.scrubends { display: flex; justify-content: space-between; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); }
+.cue { font-size: 13.5px; line-height: 1.4; min-height: 7.2em; display: grid; gap: 2px; align-content: start; }
+#sideCap { min-height: 6.2em; }
+@container (min-width: 430px) { .cue { min-height: 4.4em; } #sideCap { min-height: 3.1em; } }
+.cue .label { color: var(--accent); }
+.maps { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-width: 420px; margin: 0 auto; width: 100%; }
+.maps figure { margin: 0; display: grid; gap: 2px; justify-items: center; }
+.bd { fill: var(--body); }
+.mu { cursor: pointer; stroke: var(--surface); stroke-width: .8; transition: fill .15s; }
+.mu.hl, .mu:hover { stroke: var(--ink); stroke-width: 1.4; }
+.legend { display: grid; gap: 3px; max-width: 300px; margin: 0 auto; width: 100%; }
+.ramp { height: 9px; border-radius: 2px; background: linear-gradient(90deg, var(--h0), var(--h1), var(--h2), var(--h3), var(--h4)); }
+.ramp-t { display: flex; justify-content: space-between; font: 400 11px/1 var(--font-data); color: var(--ink2); }
+.fig { stroke: var(--fig); stroke-linecap: round; fill: none; }
+.ghostfig { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 5 5; fill: none; opacity: .75; }
+.svgtxt { font: 500 12px var(--font-data); fill: var(--ink); }
+.svgtxt2 { font: 400 10px var(--font-data); fill: var(--ink2); }
+.svglab { font: 600 9.5px var(--font-body); letter-spacing: .09em; fill: var(--ink2); }
+
+/* readouts */
+.rest { display: grid; gap: 30px; min-width: 0; }
+.sec { display: grid; gap: 14px; min-width: 0; }
+.sec-head { display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: space-between; align-items: end; border-bottom: 2px solid var(--ink); padding-bottom: 7px; }
+.sec-head p { color: var(--ink2); font-size: 13.5px; max-width: 60ch; }
+.duo { display: grid; gap: 26px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1180px) { .duo { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+.bars { display: grid; gap: 12px; }
+.mgroup { display: grid; gap: 2px; }
+.mgroup h3 { font: 600 11.5px/1.2 var(--font-body); letter-spacing: .09em; text-transform: uppercase; color: var(--ink2); padding-bottom: 2px; }
+.mrow { display: grid; grid-template-columns: minmax(104px, 1.05fr) minmax(60px, 2fr) 46px 40px; gap: 10px; align-items: center; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 2px; padding: 4px 4px; cursor: pointer; }
+.mrow:hover, .mrow.hl { background: var(--sunk); }
+.mrow.sel .mname { color: var(--accent); }
+.mname { font-weight: 500; font-size: 14px; line-height: 1.2; min-width: 0; }
+.mname small { display: block; font-weight: 400; font-size: 11.5px; color: var(--ink2); }
+.track { position: relative; height: 13px; background: var(--sunk); border-radius: 1px; }
+.fill { position: absolute; inset: 0 auto 0 0; border-radius: 1px; transition: width .15s; }
+.ghost { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .7; transition: left .15s; }
+.mval { font: 500 14px/1 var(--font-data); text-align: right; font-variant-numeric: tabular-nums; }
+.mdelta { font: 400 12px/1 var(--font-data); text-align: right; font-variant-numeric: tabular-nums; color: var(--ink2); }
+.mdelta.up { color: var(--up); } .mdelta.down { color: var(--down); }
+.colhead { display: grid; grid-template-columns: minmax(104px, 1.05fr) minmax(60px, 2fr) 46px 40px; gap: 10px; padding: 0 4px; }
+.colhead span { font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink2); }
+.colhead span:nth-child(n+3) { text-align: right; }
+.joints { display: grid; gap: 14px; align-content: start; }
+.jrow { display: grid; gap: 4px; }
+.jhead { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.jhead b { font-weight: 600; } .jhead span { font: 500 13.5px/1 var(--font-data); }
+.jtrack { position: relative; height: 10px; background: var(--sunk); border-radius: 1px; }
+.jfill { position: absolute; inset: 0 auto 0 0; background: var(--ink2); border-radius: 1px; transition: width .15s; }
+.jmark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.jnote { font-size: 12.5px; color: var(--ink2); }
+.flags { list-style: none; display: grid; gap: 8px; }
+.flags li { background: var(--warn-bg); color: var(--ink); border: 1px solid var(--warn); border-radius: 3px; padding: 8px 10px; font-size: 13.5px; line-height: 1.4; }
+.flags li.ok { background: transparent; border-color: var(--line); color: var(--ink2); }
+
+/* finder */
+.pick { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+select { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 6px 8px; }
+.bests { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.best { border: 1px solid var(--line); background: var(--surface); border-radius: 3px; padding: 12px; display: grid; gap: 7px; align-content: start; }
+.best-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.best-head b { font: 600 18px/1 var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
+.best-head span { font: 500 20px/1 var(--font-data); }
+.best p { font-size: 13.5px; color: var(--ink2); line-height: 1.45; }
+.btn { justify-self: start; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 3px; padding: 6px 12px; font-weight: 600; font-size: 13.5px; cursor: pointer; }
+.btn.quiet { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.sens { display: grid; gap: 5px; }
+.srow { display: grid; grid-template-columns: minmax(96px, .9fr) minmax(80px, 3fr) 74px; gap: 10px; align-items: center; }
+.srow > span:first-child { font-size: 14px; font-weight: 500; }
+.strack { position: relative; height: 12px; background: var(--sunk); border-radius: 1px; }
+.sspan { position: absolute; top: 0; bottom: 0; background: var(--accent); opacity: .85; border-radius: 1px; min-width: 2px; }
+.sdot { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.srow .num { font-size: 12.5px; text-align: right; color: var(--ink2); }
+.saxis { display: grid; grid-template-columns: minmax(96px, .9fr) minmax(80px, 3fr) 74px; gap: 10px; }
+.saxis div { display: flex; justify-content: space-between; font: 400 11px/1 var(--font-data); color: var(--ink2); }
+
+/* evidence */
+.ev { display: grid; gap: 0; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { .ev { grid-template-columns: 1fr 1fr; column-gap: 28px; } }
+.ev article { display: grid; gap: 6px; padding: 14px 0; border-bottom: 1px solid var(--line); align-content: start; min-width: 0; }
+.ev h3 { font: 600 18px/1.1 var(--font-display); letter-spacing: .05em; text-transform: uppercase; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.tag { font: 600 10.5px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--ink2); color: var(--ink2); border-radius: 2px; padding: 3px 6px; }
+.tag.s { border-color: var(--ink); color: var(--bg); background: var(--ink); }
+.ev p { font-size: 14px; max-width: 68ch; }
+.ev p.model { color: var(--ink2); }
+.ev p.src { font-size: 12.5px; color: var(--ink2); }
+.prose { display: grid; gap: 10px; max-width: 72ch; }
+.prose p, .prose li { font-size: 14.5px; }
+.prose ul { padding-left: 18px; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header class="mast">
+    <p class="label">Barbell lifts · muscle activation model</p>
+    <h1>Lift Variation Lab</h1>
+    <p class="lede">Change how you squat, deadlift or bench and see which muscles pick up the work. The percentages are estimates built from EMG studies and lever-arm mechanics. They are not measurements of your body.</p>
+    <div class="liftbar">
+      <span class="label" id="liftLab">Exercise</span>
+      <div class="seg big" id="lift" role="group" aria-labelledby="liftLab">
+        <button type="button" data-v="squat" aria-pressed="true">Squat</button>
+        <button type="button" data-v="deadlift" aria-pressed="false">Deadlift</button>
+        <button type="button" data-v="bench" aria-pressed="false">Bench</button>
+      </div>
+    </div>
+    <div class="knurl" aria-hidden="true"></div>
+  </header>
+
+  <div class="bench">
+    <aside class="rail" aria-label="Lift setup">
+      <div class="blk setups">
+        <div class="seg" role="group" aria-label="Setup being edited">
+          <button type="button" id="tabA" aria-pressed="true">Setup A</button>
+          <button type="button" id="tabB" aria-pressed="false">Setup B</button>
+        </div>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="cmp"> Compare A with B</label>
+          <button type="button" class="linkbtn" id="copy">Copy A into B</button>
+        </div>
+        <div class="chips" id="presets" aria-label="Starting points"></div>
+        <div class="lifters">
+          <span class="label" id="liftersLab">Lifter styles</span>
+          <div class="chips" id="lifters" role="group" aria-labelledby="liftersLab"></div>
+          <p class="hint" id="lifterNote"></p>
+        </div>
+      </div>
+      <div id="railCtl"></div>
+      <div class="blk row">
+        <button type="button" class="btn quiet" id="reset">Reset this setup</button>
+      </div>
+      <div class="blk mini" id="mini" aria-live="off"></div>
+    </aside>
+
+    <section class="stage" aria-label="Figures">
+      <div class="pane">
+        <div class="pane-head"><h2 id="stageHead">Bottom position</h2><span class="label" id="whichSetup">Setup A</span></div>
+        <div class="views" id="views">
+          <div id="sideView" role="img" aria-label="Side view of the lift"></div>
+          <div class="topwrap"><div class="seg small" id="view2" role="group" aria-label="Second view"><button type="button" data-v="front" aria-pressed="true">Front</button><button type="button" data-v="top" aria-pressed="false">Above</button></div><div id="topView" role="img" aria-label="Second view of the lift"></div></div>
+        </div>
+        <div class="rep">
+          <button type="button" class="btn" id="play" aria-pressed="false">Play rep</button>
+          <div class="scrubwrap">
+            <input type="range" id="scrub" min="0" max="100" step="1" value="100" aria-label="Position in the rep">
+            <div class="scrubends"><span id="endTop">Top</span><span id="endBot">Bottom</span></div>
+          </div>
+        </div>
+        <p class="cue"><span class="label" id="phase"></span><span id="cue"></span></p>
+        <p class="cap" id="sideCap"></p>
+      </div>
+      <div class="pane">
+        <div class="pane-head">
+          <h2>Muscle map</h2>
+          <div class="seg" id="metric" role="group" aria-label="What the percentages mean">
+            <button type="button" data-v="act">% of max</button>
+            <button type="button" data-v="share">Share of work</button>
+          </div>
+        </div>
+        <div class="maps">
+          <figure><svg id="mapF" viewBox="0 0 200 414" role="img" aria-label="Front of the body"></svg><span class="label">Front</span></figure>
+          <figure><svg id="mapB" viewBox="0 0 200 414" role="img" aria-label="Back of the body"></svg><span class="label">Back</span></figure>
+        </div>
+        <div class="legend">
+          <div class="ramp"></div>
+          <div class="ramp-t" id="rampT"></div>
+        </div>
+        <p class="cap" id="metricCap"></p>
+      </div>
+    </section>
+
+    <div class="rest">
+      <section class="sec">
+        <div class="sec-head"><h2>Muscles and joints</h2><p id="deltaCap"></p></div>
+        <div class="duo">
+          <div>
+            <div class="colhead"><span>Muscle</span><span></span><span id="valHead">% max</span><span id="deltaHead">vs std</span></div>
+            <div class="bars" id="bars"></div>
+          </div>
+          <div class="joints">
+            <h3 class="label" id="jointHead">Joint demand, standard squat = 100</h3>
+            <div id="joints" class="joints"></div>
+            <ul class="flags" id="flags"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec" id="finder">
+        <div class="sec-head"><h2>Target a muscle</h2><p id="finderNote">The setup that works one muscle hardest at your current load and build, and which variables matter for it.</p></div>
+        <div class="pick">
+          <label for="target" class="label">Muscle</label>
+          <select id="target"></select>
+          <span class="cap" id="nowCap"></span>
+        </div>
+        <div class="bests" id="bests"></div>
+        <h3 class="label">How far each variable alone can move it</h3>
+        <div class="sens" id="sens"></div>
+      </section>
+
+      <section class="sec" id="evidence">
+        <div class="sec-head"><h2>What the research says</h2><p>How solid the evidence is for each variable, and how the model uses it.</p></div>
+        <div class="ev" id="ev_squat">
+          <article>
+            <h3>Load <span class="tag s">Strong evidence</span></h3>
+            <p>Reviews agree that activation of the prime movers climbs as the bar gets heavier, and that load changes more than stance width, hip rotation or switching to a front squat does.</p>
+            <p class="model">Model: every lever is multiplied by bar weight plus bodyweight above the knees.</p>
+            <p class="src">Sources: <a href="https://rgu-repository.worktribe.com/OutputFile/2226082">Clark 2012 review</a>, <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC13460602/">PLOS One 2026</a></p>
+          </article>
+          <article>
+            <h3>Depth <span class="tag">Mixed evidence</span></h3>
+            <p>Partial to parallel raises quad and glute activity. Parallel and full depth look alike on EMG when each is loaded to its own max. Yet ten weeks of full squats grew glutes and adductors two to three times as much as half squats, with similar quad growth and no hamstring growth. Below parallel, EMG and growth disagree.</p>
+            <p class="model">Model: takes the peak demand anywhere in the rep, so deeper is never less. The knee lever keeps growing below parallel; the hip lever peaks near parallel.</p>
+            <p class="src">Sources: <a href="https://research.usc.edu.au/esploro/outputs/journalArticle/Electromyographic-activity-in-superficial-muscles-of/99450686302621">Hammond 2016</a>, <a href="https://pubmed.ncbi.nlm.nih.gov/26252837/">Contreras 2016</a>, <a href="https://link.springer.com/doi/10.1007/s00421-019-04181-y">Kubo 2019</a>, <a href="https://era.library.ualberta.ca/items/8562bc34-0ecf-4d8c-92b0-6ace198be6b1">Bryanton thesis</a></p>
+          </article>
+          <article>
+            <h3>Stance width <span class="tag">Moderate evidence</span></h3>
+            <p>Wider stances raise glute max activity, by 13 to 61 percent across studies. Quads, hamstrings and glute medius barely change, the calf drops slightly, and overall adductor activity stays about the same on surface EMG. One modelling study found narrow stances raise quad forces and wide stances raise posterior-chain forces.</p>
+            <p class="model">Model: a wider stance turns the thighs out, shortens their reach front to back, and shifts hip work toward the glutes. The adductor increase it shows is an estimate, since surface EMG reads adductor magnus poorly.</p>
+            <p class="src">Sources: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10987311/">Straub &amp; Powers 2024 review</a>, <a href="https://pubmed.ncbi.nlm.nih.gov/19130646/">Paoli 2009</a>, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9503729">Sinclair 2022</a></p>
+          </article>
+          <article>
+            <h3>Toe angle <span class="tag">Moderate evidence, small effect</span></h3>
+            <p>Turning the feet out up to 30 degrees does not change quad, hamstring or calf activity. Adductor activity rose with 30 and 50 degrees of turnout in a study the review cites. Toe angle matters more for comfort and knee tracking than for targeting a muscle.</p>
+            <p class="model">Model: a small adductor effect, a small change in lean, and a warning when feet and thighs point in different directions.</p>
+            <p class="src">Sources: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10987311/">Straub &amp; Powers 2024 review</a>, <a href="https://rgu-repository.worktribe.com/OutputFile/2226082">Clark 2012 review</a></p>
+          </article>
+          <article>
+            <h3>Torso lean <span class="tag">Mostly mechanics</span></h3>
+            <p>Leaning forward sends the hips back, which lengthens the lever at the hips and lower back and shortens it at the knees. A biomechanics review treats trunk and shin angle as what sets the hip-to-knee split, and blames uncontrolled trunk angle for the conflicting stance-width results.</p>
+            <p class="model">Model: the bar must stay over midfoot, so lean and knee travel trade off directly. This is the single strongest lever in the tool after load.</p>
+            <p class="src">Sources: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10987311/">Straub &amp; Powers 2024 review</a></p>
+          </article>
+          <article>
+            <h3>Bar position <span class="tag">Moderate evidence</span></h3>
+            <p>Low bar goes with more forward lean and more erector, adductor and glute activity; high bar with more quad activity. With load, depth and stance matched, though, low bar showed lower erector and quad activity, so much of its effect comes from the lean and the heavier weights it allows. A direct comparison of front and back squats found no significant EMG differences.</p>
+            <p class="model">Model: bar position sets where the load sits on the torso, which sets the lean needed for balance. A front rack forces an upright torso and loads the upper back.</p>
+            <p class="src">Sources: <a href="https://pubmed.ncbi.nlm.nih.gov/28570490/">Glassbrook 2017 review</a>, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7739732">van den Tillaar 2020</a>, <a href="https://pubmed.ncbi.nlm.nih.gov/19002072/">Gullett 2009</a></p>
+          </article>
+          <article>
+            <h3>Heel elevation <span class="tag">Mixed evidence</span></h3>
+            <p>Several studies find heel wedges and lifting shoes increase knee bend and, in some conditions, give a more upright trunk. One study of recreational lifters found no change in trunk angle or in quad and back muscle activity.</p>
+            <p class="model">Model: a raised heel adds ankle range, which lets the knees travel forward. The effect is small unless your ankles are the limit.</p>
+            <p class="src">Sources: <a href="https://www.termedia.pl/Comparing-the-kinematics-of-back-squats-performed-with-different-heel-elevations,129,44078,0,0.html">heel wedge study</a>, <a href="https://research.stmarys.ac.uk/id/eprint/1142/1/Legg%20et%20al%202016.pdf">Legg 2017</a>, <a href="https://oasis.library.unlv.edu/thesesdissertations/3543">Lee 2019</a></p>
+          </article>
+          <article>
+            <h3>Body proportions <span class="tag">Mostly mechanics</span></h3>
+            <p>Longer femurs relative to the torso force more forward lean to keep the bar over midfoot. That is geometry. Direct muscle comparisons between builds are scarce.</p>
+            <p class="model">Model: femur and torso length change the levers directly; ankle mobility limits how far the knees can travel.</p>
+            <p class="src">Sources: <a href="https://bretcontreras.com/how-femur-length-effects-squat-mechanics/">Contreras, femur length and squat mechanics</a></p>
+          </article>
+        </div>
+        <div class="ev" id="ev_deadlift" hidden>
+          <article>
+            <h3>Which muscles work hardest <span class="tag s">Systematic review</span></h3>
+            <p>Across deadlift studies, the spinal erectors and quadriceps are more active than the glute max and biceps femoris, and semitendinosus is slightly more active than biceps femoris. The review also warns that methods differ so much between studies that numbers are hard to compare.</p>
+            <p class="model">Model: the long lever at the hips and lower back drives the erectors, glutes and hamstrings. The quads stay busy even with a short knee lever, because they have to cancel the pull of the hamstrings at the knee.</p>
+            <p class="src">Sources: <a href="https://doaj.org/article/1baf665988994d63ac2c8697dc5cd2a2">Martín-Fuentes 2020 review</a></p>
+          </article>
+          <article>
+            <h3>Conventional or sumo <span class="tag">Good evidence</span></h3>
+            <p>Sumo keeps the trunk 5 to 10 degrees more upright and the thighs more horizontal, and conventional lifters moved the bar 25 to 40 percent farther. Sumo raises quad activity and knee demand (a knee moment of about 80 against 53 N·m at 85% load in one study) and adds a large sideways demand at the hip. Hip extension demand is similar or slightly lower. Conventional showed more biceps femoris and calf activity.</p>
+            <p class="model">Model: a wide stance turns the thighs out, which brings the hips closer to the bar and shortens the lever at the lower back. The adductor increase it shows follows the sideways hip demand and is an estimate.</p>
+            <p class="src">Sources: <a href="https://www.bisp-surf.de/Record/PU199912408060">Escamilla 2000</a>, <a href="https://pubmed.ncbi.nlm.nih.gov/11932579/">Escamilla 2002</a>, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12148905">Hanen 2025</a></p>
+          </article>
+          <article>
+            <h3>Straight bar or trap bar <span class="tag">Good evidence</span></h3>
+            <p>A trap bar gives lower peak moments at the lower back, hips and ankles and a higher peak moment at the knees. EMG agrees: more vastus lateralis with the trap bar, more biceps femoris and erector activity with the straight bar. Powerlifters pulled about 8 percent more with a trap bar in one study; another found no difference in max.</p>
+            <p class="model">Model: with no bar in front of the shins, the knees travel forward and the hips sit closer to the load. High handles shorten the pull.</p>
+            <p class="src">Sources: <a href="https://www.bisp-surf.de/Record/PU201110008436">Swinton 2011</a>, <a href="https://www.bisp-surf.de/Record/PU201605002989">Camara 2016</a></p>
+          </article>
+          <article>
+            <h3>Hip height, Romanian and stiff-leg <span class="tag">Moderate evidence</span></h3>
+            <p>In maximal pulls against a fixed bar, a set-up with the bar closer and the hips higher gave more biceps femoris and upper-lumbar erector activity and less vastus lateralis, with a knee moment of 22 against 51 N·m and no difference at the hips or lower back. At the same bar weight, a Romanian deadlift showed far less rectus femoris activity than a conventional one (25 against 59 percent of peak) and slightly less glute max, and the net knee torque flipped from extensor to flexor.</p>
+            <p class="model">Model: less knee bend puts the knees behind the bar, so quad demand falls toward zero and the hamstrings and erectors take more. A review found erectors below hamstrings in the Romanian deadlift; the model keeps erectors on top at equal bar weight, so treat that ranking with caution.</p>
+            <p class="src">Sources: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6162543">Edington 2018</a>, <a href="https://doaj.org/article/cb967057d3314b8cbda698d30b84ae6c">Lee 2018</a>, <a href="https://doaj.org/article/1baf665988994d63ac2c8697dc5cd2a2">Martín-Fuentes 2020 review</a></p>
+          </article>
+          <article>
+            <h3>Back rounding and the Jefferson curl <span class="tag">One study</span></h3>
+            <p>One EMG study compared the Jefferson curl with a Romanian deadlift at the same bar weight, about 40% of the lifters' deadlift max. The curl gave more lower-erector activity (60 against 48 percent of max), more upper-erector activity (63 against 45) and more biceps femoris (54 against 42), with no difference in glute max. Its authors note that current evidence does not clearly tie spinal flexion to back pain in healthy lifters. In maximal static pulls, a separate study found a fully flexed spine produced its back-extension moment with far less erector EMG than an arched one.</p>
+            <p class="model">Model: rounding shortens the trunk and lets the legs straighten, and curling and uncurling the spine adds erector and hamstring work in line with that study. It does not model a heavy deadlift held in a fixed rounded position, and it takes no position on safety.</p>
+            <p class="src">Sources: <a href="https://ijspt.scholasticahq.com/article/172559-surface-emg-characterization-of-the-jefferson-curl-at-a-submaximal-load-matched-to-the-romanian-deadlift-a-cross-sectional-study-in-resistance-traine">Yona 2026</a>, <a href="https://www.physiotutors.com/research/lifting-with-a-flexed-back/">Mawston 2021, summarised</a></p>
+          </article>
+          <article>
+            <h3>Start height <span class="tag">Mechanics only</span></h3>
+            <p>No direct EMG comparison of deficit and block pulls turned up in the research for this tool, so this variable rests on geometry alone.</p>
+            <p class="model">Model: a lower start means more knee and hip bend, a longer knee lever and more bar travel. A higher start shortens the levers and the travel, most of all once the bar begins above the knee.</p>
+          </article>
+          <article>
+            <h3>Load <span class="tag">Carried over from the squat</span></h3>
+            <p>Not checked separately for the deadlift. In the squat research, heavier loads raised activation across the prime movers and mattered more than any stance change.</p>
+            <p class="model">Model: every lever is multiplied by bar weight plus bodyweight; traps and forearms follow bar weight alone.</p>
+            <p class="src">Sources: <a href="https://rgu-repository.worktribe.com/OutputFile/2226082">Clark 2012 review</a></p>
+          </article>
+          <article>
+            <h3>Upper back, lats and grip <span class="tag">Model estimate</span></h3>
+            <p>No EMG sources were checked for these. The bar hangs from the hands, so the traps and forearms should scale with bar weight in every variation.</p>
+            <p class="model">Model: the lat estimate depends on how far the shoulders sit ahead of the bar, which is largest with a conventional stance and near zero with a trap bar.</p>
+          </article>
+          <article>
+            <h3>Body proportions <span class="tag">Mostly mechanics</span></h3>
+            <p>Arm length sets how high the shoulders start. Longer arms raise the hips and make the back more upright; long femurs do the opposite. This is geometry, with no EMG behind it.</p>
+            <p class="model">Model: femur, torso and arm length change the levers directly. Ankle mobility only matters with a trap bar, where the knees are free to travel.</p>
+          </article>
+        </div>
+        <div class="ev" id="ev_bench" hidden>
+          <article>
+            <h3>Load <span class="tag s">Strong evidence</span></h3>
+            <p>A systematic review calls intensity the most important factor in bench press EMG. In one study pec activity rose from 21 to 52 to 81 percent of max as the load went from 20 to 50 to 80 percent of one-rep max, and triceps from 31 to 55 to 80. Pecs and triceps were similarly active, both above the front delt.</p>
+            <p class="model">Model: every muscle scales with effort, which is the bar weight divided by what the chosen angle and grip let you lift.</p>
+            <p class="src">Sources: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5295722">Stastny 2017 review</a></p>
+          </article>
+          <article>
+            <h3>Bench angle <span class="tag">Good evidence</span></h3>
+            <p>At equal effort, the upper pec peaks at about 30 degrees of incline, the mid and lower pec are highest on a flat bench and fall as it tilts up, and the front delt climbs steadily with the angle. Triceps results conflict: unchanged in one study, far lower on the incline in another, which also found biceps about 50 to 70 percent higher there. Maxes drop about 22 percent at 30 degrees and 29 percent at 45. Older work found the upper pec least active on a decline.</p>
+            <p class="model">Model: a muscle-by-muscle pattern for each angle from those studies, with triceps set between the two conflicting results. At the same bar weight an incline is a harder effort, so everything rises.</p>
+            <p class="src">Sources: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7579505">Rodríguez-Ridao 2020</a>, <a href="https://johk.pl/?p=4244">Saeterbakken 2017</a>, <a href="https://thesportjournal.org/article/optimizing-development-of-the-pectoralis-major/">Sport Journal review</a></p>
+          </article>
+          <article>
+            <h3>Grip width <span class="tag">Good evidence, small effect</span></h3>
+            <p>Across close, medium and wide grips at a six-rep max, pec activity did not differ. Biceps roughly doubled from close to wide (13, 19 and 25 percent of max), triceps eased off with the wide grip (70, 69 and 63), and the front delt was slightly lower with a close grip. Lifters handled about 7 percent less with the close grip. Older studies found a little more mid-chest with a wide grip and more upper chest and triceps with a close one.</p>
+            <p class="model">Model: those biceps, triceps and delt shifts, plus small pec shifts that split the difference between the newer and older studies.</p>
+            <p class="src">Sources: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8296276">Saeterbakken 2021</a>, <a href="https://thesportjournal.org/article/optimizing-development-of-the-pectoralis-major/">Sport Journal review</a></p>
+          </article>
+          <article>
+            <h3>Back arch <span class="tag">One study</span></h3>
+            <p>Benching with a flat back moved the bar 13 to 15 cm farther than an arched back in trained lifters, with no difference in pec activity for either head, a non-significant trend toward more triceps with the arch, and a slightly higher max with the arch.</p>
+            <p class="model">Model: the arch raises the chest, which shortens bar travel. Muscle levels barely move, apart from the back and legs holding the arch.</p>
+            <p class="src">Sources: <a href="https://air.unimi.it/retrieve/641d7903-dbf3-42e9-ae27-74e562c58f03/Bartolomei%20JSCR%202024.pdf">Bartolomei 2024</a></p>
+          </article>
+          <article>
+            <h3>Elbow flare and touch point <span class="tag">Mostly mechanics</span></h3>
+            <p>These follow from the grip. One study linked a grip of twice shoulder width or more to the upper arms more than 75 degrees out, and a grip under one and a half times shoulder width to less than 45 degrees.</p>
+            <p class="model">Model: forearms stay stacked under the bar, so a wider grip flares the elbows and moves the touch point up the chest. There is no separate elbow control, because no EMG study in this research isolated it.</p>
+            <p class="src">Sources: <a href="https://thesportjournal.org/article/optimizing-development-of-the-pectoralis-major/">Sport Journal review</a></p>
+          </article>
+          <article>
+            <h3>Arm length <span class="tag">Mechanics only</span></h3>
+            <p>Longer arms mean more bar travel. No EMG comparison by arm length was found.</p>
+            <p class="model">Model: travel comes from geometry, with a small assumed cost to how much you can lift.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="sec" id="method">
+        <div class="sec-head"><h2>How the numbers are made</h2></div>
+        <div class="prose">
+          <p><b>Geometry first.</b> The bar has to stay over the middle of the foot. Given your stance, bar, build and the other settings, the model works out where the knees and hips must sit. In the deadlift the arms hang straight to the bar, which fixes the shoulders and so the hips. The horizontal distance from each joint to the bar's line is its lever, and lever times load is the demand on that joint.</p>
+          <p><b>Levers to muscles.</b> The knee lever drives the quads. The hip lever is split between glutes, adductors and hamstrings according to hip angle and stance. The lean drives the spinal erectors. A standard squat (high bar, parallel, 80% load) is pinned to typical published EMG values, and every other squat and deadlift setup is scaled from it, so the two share one scale. That scale assumes your deadlift max is about 20% above your squat max. The bench press is built more directly from EMG studies: each muscle's level in a standard set, adjusted by the measured effects of angle, grip and effort.</p>
+          <div class="pat" id="pat_squat">
+            <p><b>Three patterns the map shows in every squat.</b></p>
+            <ul>
+              <li>Hamstrings stay low. They cross the knee as well as the hip, so using them hard would fight the quads. Squat training did not grow them in <a href="https://link.springer.com/doi/10.1007/s00421-019-04181-y">Kubo 2019</a>.</li>
+              <li>Adductors are a prime mover. Modelling suggests adductor magnus supplies half or more of the hip-extension torque in the squat (<a href="https://www.strongerbyscience.com/squats-adductors/">Vigotsky &amp; Bryanton, summarised here</a>).</li>
+              <li>Rectus femoris trails the other quads, because it also flexes the hip.</li>
+            </ul>
+          </div>
+          <div class="pat" id="pat_deadlift" hidden>
+            <p><b>Three patterns the map shows in every deadlift.</b></p>
+            <ul>
+              <li>The lower back tops the chart. The hips start far behind the bar, and the erectors hold the trunk against that whole lever.</li>
+              <li>Hamstrings work here in a way they do not in the squat, because the knees stay near the bar and the hips do most of the moving.</li>
+              <li>Traps and forearms follow bar weight alone. No stance or bar choice changes what it takes to hang on.</li>
+            </ul>
+          </div>
+          <div class="pat" id="pat_bench" hidden>
+            <p><b>Three patterns the map shows in every bench press.</b></p>
+            <ul>
+              <li>Pecs, front delts and triceps do nearly all the work, and they rise and fall together with effort.</li>
+              <li>Bench angle changes the mix more than anything else you can set: up the incline, the front delt and upper pec gain while the mid and lower pec fade.</li>
+              <li>Grip width and arch change the bar path much more than they change the muscles.</li>
+            </ul>
+          </div>
+          <p><b>Limits.</b> Published EMG values for the same lift vary widely between studies, so trust the direction and rough size of a change more than any single number. EMG is not force and not growth. Muscles marked “est.” have little direct EMG data. Share of work is activation times approximate muscle size. Joint demand is lever times load, not tissue stress or injury risk. Nothing here is medical advice.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== Squat model (pure functions, no DOM) ===== */
+const H = 1.75; // model lifter height in metres; only proportions matter for the percentages
+const ANTH = { shank: 0.246, femur: 0.245, torso: 0.295, mid: 0.039, hipHalf: 0.05, shoulder: 0.23, heelBall: 0.11, ankleH: 0.039, foot: 0.152 };
+const BARS = {
+  high:  { label: 'High bar',    ds: 0,      p: 0.034,  k: 0.92, leanMax: 64 },
+  low:   { label: 'Low bar',     ds: -0.03,  p: 0.040,  k: 0.76, leanMax: 68 },
+  front: { label: 'Front squat', ds: -0.012, p: -0.050, k: 1.00, leanMax: 38 }
+};
+const STANDARD = { bar: 'high', stance: 110, toe: 25, depth: 0, leanAuto: true, lean: 34, load: 80, heel: 0, femur: 0, torso: 0, ankle: 38 };
+
+const MUSCLES = [
+  { id: 'VL',   name: 'Vastus lateralis',   note: 'outer quad',            group: 'Quads',       anchor: 70, size: 9.6, basis: 'emg' },
+  { id: 'VM',   name: 'Vastus medialis',    note: 'teardrop',              group: 'Quads',       anchor: 72, size: 5.6, basis: 'emg' },
+  { id: 'RF',   name: 'Rectus femoris',     note: 'mid quad',              group: 'Quads',       anchor: 45, size: 2.7, basis: 'emg' },
+  { id: 'GMAX', name: 'Gluteus maximus',    note: 'main glute',            group: 'Glutes',      anchor: 45, size: 8.5, basis: 'emg' },
+  { id: 'GMED', name: 'Gluteus medius',     note: 'side of hip',           group: 'Glutes',      anchor: 18, size: 3.2, basis: 'emg' },
+  { id: 'ADD',  name: 'Adductors',          note: 'mostly adductor magnus', group: 'Inner thigh', anchor: 45, size: 7.0, basis: 'model' },
+  { id: 'BF',   name: 'Biceps femoris',     note: 'outer hamstring',       group: 'Hamstrings',  anchor: 18, size: 3.0, basis: 'emg' },
+  { id: 'SEMI', name: 'Semitendinosus',     note: 'inner hamstrings',      group: 'Hamstrings',  anchor: 16, size: 4.3, basis: 'emg' },
+  { id: 'ES',   name: 'Spinal erectors',    note: 'lower back',            group: 'Back',        anchor: 60, size: 5.0, basis: 'emg' },
+  { id: 'UB',   name: 'Upper back',         note: 'thoracic extensors',    group: 'Back',        anchor: 30, size: 4.0, basis: 'model' },
+  { id: 'TRAP', name: 'Trapezius',          note: 'traps',                 group: 'Back',        anchor: 17, size: 2.3, basis: 'model' },
+  { id: 'LAT',  name: 'Latissimus dorsi',   note: 'lats',                  group: 'Back',        anchor: 10, size: 2.6, basis: 'model' },
+  { id: 'GAS',  name: 'Gastrocnemius',      note: 'upper calf',            group: 'Calves',      anchor: 18, size: 4.1, basis: 'emg' },
+  { id: 'SOL',  name: 'Soleus',             note: 'lower calf',            group: 'Calves',      anchor: 30, size: 4.4, basis: 'model' },
+  { id: 'RA',   name: 'Rectus abdominis',   note: 'abs',                   group: 'Core',        anchor: 10, size: 1.7, basis: 'emg' },
+  { id: 'OBL',  name: 'Obliques',           note: 'side abs',              group: 'Core',        anchor: 18, size: 3.5, basis: 'emg' },
+  { id: 'PECS', name: 'Pectoralis major',   note: 'mid and lower chest',   group: 'Chest',       anchor: 3,  size: 2.0, basis: 'emg' },
+  { id: 'PECC', name: 'Upper pectoralis',   note: 'clavicular head',       group: 'Chest',       anchor: 3,  size: 0.9, basis: 'emg' },
+  { id: 'ADELT', name: 'Anterior deltoid',  note: 'front delt',            group: 'Shoulders',   anchor: 5,  size: 1.3, basis: 'emg' },
+  { id: 'TRI',  name: 'Triceps',            note: 'back of arm',           group: 'Arms',        anchor: 4,  size: 3.7, basis: 'emg' },
+  { id: 'BIC',  name: 'Biceps',             note: 'front of arm',          group: 'Arms',        anchor: 4,  size: 1.5, basis: 'emg' },
+  { id: 'GRIP', name: 'Forearms',           note: 'grip',                  group: 'Arms',        anchor: 8,  size: 2.5, basis: 'model' }
+];
+
+const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+/* drawing only: as the leg straightens, the knee comes onto the line from hip to ankle */
+function kneeDrawY(ky, hipY, ankleY, hz, kz, az) {
+  const fr = Math.min(Math.max((hz - kz) / Math.max(hz - az, 0.05), 0), 1), on = hipY + (ankleY - hipY) * fr;
+  const tall = (hz - az) / ((ANTH.shank + ANTH.femur) * H), w = Math.min(Math.max((0.92 - tall) / 0.17, 0), 1);
+  return on + (ky - on) * w;
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+function dims(s) {
+  return {
+    Ls: ANTH.shank * H,
+    Lf: ANTH.femur * H * (1 + 0.06 * s.femur),
+    Lt: ANTH.torso * H * (1 + 0.05 * s.torso),
+    m: ANTH.mid * H, hh: ANTH.hipHalf * H,
+    W: s.stance / 100 * ANTH.shoulder * H
+  };
+}
+function wedgeDeg(s) { return deg(Math.asin(clamp(s.heel / (ANTH.heelBall * H * 100), 0, 0.9))); }
+function ankleLimit(s) { return s.ankle + wedgeDeg(s); }
+function stanceK(s) { return clamp(1 - 0.0018 * (s.stance - 100), 0.78, 1.06); }
+function depthG(phi) { return clamp(0.85 - 0.005 * phi, 0.45, 1); }
+/* shin angle a lifter naturally uses at thigh angle phi (deg above horizontal) */
+function naturalShin(s, phi) {
+  const base = 38 + 0.5 * (s.ankle - 38) + 0.7 * wedgeDeg(s);
+  return clamp(base * BARS[s.bar].k * stanceK(s) * depthG(phi), 3, 0.98 * ankleLimit(s));
+}
+
+/* full posture at thigh angle phi and shin angle thS (both degrees) */
+function posture(s, phi, thS) {
+  const d = dims(s), b = BARS[s.bar];
+  const tau = rad(s.toe), th = rad(thS), ph = rad(phi);
+  const reach = d.Ls * Math.sin(th);
+  let kx = reach * Math.cos(tau), ky = d.W / 2 + reach * Math.sin(tau);
+  const kz = ANTH.ankleH * H + d.Ls * Math.cos(th);
+  const proj = d.Lf * Math.cos(ph);
+  let lo = ky - d.hh;
+  let beta = deg(Math.asin(clamp(lo / proj, -0.99, 0.99)));
+  if (beta > 40) beta = Math.min(40 + 0.4 * (beta - 40), 52); /* hips run out of abduction: knees stay inside the feet */
+  lo = proj * Math.sin(rad(beta)); ky = d.hh + lo;
+  const sag = proj * Math.cos(rad(beta));
+  const hx = kx - sag, hz = kz + d.Lf * Math.sin(ph);
+  const copx = d.m * Math.cos(tau), copy = d.W / 2 + d.m * Math.sin(tau);
+  const D = copx - hx, dy = copy - d.hh;
+  const flat = Math.cos(ph) * Math.cos(ph); /* 1 when the thigh is horizontal */
+  const sb = Math.sin(rad(beta)), cb = Math.cos(rad(beta));
+  const sBar = d.Lt + b.ds * H, p = b.p * H;
+  const R = Math.hypot(sBar, p), alpha = Math.atan2(p, sBar);
+  const lean = deg(alpha + Math.asin(clamp(D / R, -0.99, 0.99)));
+  const lr = rad(lean);
+  const kneeLever = reach - d.m;
+  const hipLever = cb * D + 0.6 * flat * sb * dy;
+  const frontLever = 0.6 * dy * (1 - 0.6 * flat * sb);
+  const lumbarLever = D - 0.035 * H * Math.sin(lr);
+  const thorLever = (sBar - 0.70 * d.Lt) * Math.sin(lr) - p * Math.cos(lr);
+  return {
+    phi, thS, lean, beta, D, kneeLever, hipLever, frontLever, lumbarLever, thorLever, lo,
+    kneeFlex: 90 - phi + thS, hipFlex: 90 - phi + lean,
+    pts: {
+      ankle: [0, ANTH.ankleH * H], knee: [kx, kz], hip: [hx, hz],
+      shoulder: [hx + d.Lt * Math.sin(lr), hz + d.Lt * Math.cos(lr)],
+      bar: [hx + sBar * Math.sin(lr) - p * Math.cos(lr), hz + sBar * Math.cos(lr) + p * Math.sin(lr)],
+      cop: [copx, 0], kneeY: kneeDrawY(ky, d.hh, d.W / 2, hz, kz, ANTH.ankleH * H), copY: copy, hipY: d.hh, ankleY: d.W / 2
+    }
+  };
+}
+
+/* lean range that keeps the bar over midfoot at the bottom */
+function leanRange(s) {
+  const phi = -s.depth;
+  const up = posture(s, phi, ankleLimit(s)).lean;
+  const back = posture(s, phi, 4).lean;
+  const hi = Math.min(back, BARS[s.bar].leanMax);
+  return { min: Math.ceil(Math.min(up, hi)), max: Math.floor(Math.max(hi, up + 1)) };
+}
+
+/* shin angle at the bottom: natural, or solved from a hand-set lean */
+function bottomShin(s) {
+  const phi = -s.depth;
+  if (s.leanAuto) {
+    let t = naturalShin(s, phi);
+    const cap = BARS[s.bar].leanMax;
+    if (posture(s, phi, t).lean > cap) t = solveShin(s, phi, cap);
+    return t;
+  }
+  const r = leanRange(s);
+  return solveShin(s, phi, clamp(s.lean, r.min, r.max));
+}
+function solveShin(s, phi, lean) {
+  let a = 4, b = ankleLimit(s);
+  for (let i = 0; i < 28; i++) {
+    const mid = (a + b) / 2;
+    if (posture(s, phi, mid).lean > lean) a = mid; else b = mid;
+  }
+  return (a + b) / 2;
+}
+
+let _norm = null;
+function norm() {
+  if (_norm) return _norm;
+  const P = posture(STANDARD, 0, naturalShin(STANDARD, 0));
+  return (_norm = { knee: P.kneeLever + 0.15 * P.hipLever, kneeOnly: P.kneeLever, hip: P.hipLever, front: P.frontLever, lumbar: P.lumbarLever, thor: P.thorLever + 0.03, ratio: P.hipLever / P.kneeLever, shin: P.thS });
+}
+function addDepth(hf) { return 0.6 + 0.4 * clamp((hf - 55) / 70, 0, 1.15); }
+function widthFactor(s) { return clamp((s.stance - 110) / 70 + 0.25 * (s.toe - 25) / 25, -0.8, 1.2); }
+
+/* raw (unnormalised) demand on each muscle at one posture */
+function rawAt(s, P, ld) {
+  const N = norm();
+  const k = Math.max((P.kneeLever + 0.15 * P.hipLever) / N.knee, 0.05) * ld;
+  const e = Math.max(P.hipLever / N.hip, 0.05) * ld;
+  const a = Math.max(P.frontLever / N.front, 0.05) * ld;
+  const sp = Math.max(P.lumbarLever / N.lumbar, 0.05) * ld;
+  const t = Math.max((P.thorLever + 0.03) / N.thor, 0.2) * ld;
+  const wf = widthFactor(s);
+  const rho = clamp((P.hipLever / Math.max(P.kneeLever, 0.04)) / N.ratio, 0.5, 2.5);
+  const vl = Math.pow(k, k > 1 ? 0.7 : 0.75);
+  const ham = e * clamp(1 + 0.35 * (rho - 1), 0.7, 1.5);
+  return {
+    VL: vl,
+    VM: vl * (1 + 0.04 * wf) * (s.bar === 'front' ? 1.04 : 1),
+    RF: Math.pow(k, 0.85) * clamp(1 - 0.15 * (rho - 1), 0.7, 1.1) * (1 - 0.10 * clamp((P.hipFlex - 115) / 35, 0, 1)),
+    GMAX: Math.pow(e, 0.9) * (1 + 0.18 * wf),
+    GMED: (0.5 * ld + 0.5 * e) * (1 + 0.10 * Math.max(wf, 0)),
+    ADD: 0.8 * e * addDepth(P.hipFlex) * (1 + 0.18 * wf + 0.15 * (s.toe - 25) / 25) + 0.2 * a,
+    BF: ham * (1 + 0.05 * wf),
+    SEMI: ham,
+    ES: Math.pow(sp, 0.9),
+    UB: 0.4 * ld + 0.6 * t,
+    GAS: Math.pow(ld, 0.9) * (1 - 0.10 * wf) * (0.85 + 0.15 * clamp(P.kneeLever / N.kneeOnly, 0.3, 1.6)),
+    SOL: Math.pow(ld, 0.9) * (0.7 + 0.3 * P.thS / N.shin),
+    RA: ld,
+    OBL: ld,
+    TRAP: 0.3 * s.load / 80, LAT: 0.25 * s.load / 80, GRIP: 0.12 * s.load / 80,
+    PECS: s.load / 80, PECC: s.load / 80, ADELT: (s.bar === 'front' ? 2.5 : 1) * s.load / 80, TRI: s.load / 80, BIC: s.load / 80
+  };
+}
+
+function loadFactor(pct) { return (0.85 + 1.5 * pct / 100) / (0.85 + 1.5 * 0.8); }
+function soften(x) { return x <= 60 ? x : 60 + 40 * (1 - Math.exp(-(x - 60) / 40)); }
+
+/* peak demand through the whole rep, from near the top down to the chosen depth */
+function sweep(s) {
+  const phiB = -s.depth, thB = bottomShin(s), ld = loadFactor(s.load);
+  const ratio = thB / naturalShin(s, phiB);
+  const bottom = posture(s, phiB, thB);
+  const peak = {}, lim = ankleLimit(s);
+  let pk = { knee: -1, hip: -1, lumbar: -1 }, hipPeakPhi = phiB;
+  const phis = [phiB];
+  for (let p = Math.ceil((phiB + 0.01) / 7.5) * 7.5; p <= 60; p += 7.5) phis.push(p);
+  for (const phi of phis) {
+    const th = phi === phiB ? thB : clamp(naturalShin(s, phi) * ratio, 3, lim);
+    const P = phi === phiB ? bottom : posture(s, phi, th);
+    const r = rawAt(s, P, ld);
+    for (const id in r) if (!(id in peak) || r[id] > peak[id]) peak[id] = r[id];
+    if (P.kneeLever * ld > pk.knee) pk.knee = P.kneeLever * ld;
+    if (P.hipLever * ld > pk.hip) { pk.hip = P.hipLever * ld; hipPeakPhi = phi; }
+    if (P.lumbarLever * ld > pk.lumbar) pk.lumbar = P.lumbarLever * ld;
+  }
+  return { peak, bottom, pk, hipPeakPhi, thB, ld };
+}
+
+let _ref = null;
+function ref() { return _ref || (_ref = sweep(STANDARD)); }
+
+function evaluate(s) {
+  const r = sweep(s), R = ref();
+  const act = {}; let tot = 0;
+  for (const mu of MUSCLES) {
+    act[mu.id] = clamp(soften(mu.anchor * r.peak[mu.id] / R.peak[mu.id]), 0, 100);
+    tot += act[mu.id] * mu.size;
+  }
+  const share = {};
+  for (const mu of MUSCLES) share[mu.id] = 100 * act[mu.id] * mu.size / tot;
+  const lim = ankleLimit(s);
+  const joints = {
+    knee: 100 * r.pk.knee / R.pk.knee,
+    hip: 100 * r.pk.hip / R.pk.hip,
+    back: 100 * r.pk.lumbar / R.pk.lumbar,
+    ankle: 100 * r.thB / lim
+  };
+  return { act, share, joints, bottom: r.bottom, hipPeakPhi: r.hipPeakPhi, twist: s.toe - r.bottom.beta, range: leanRange(s) };
+}
+
+/* ---------- squat: search space and sweeps ---------- */
+const FIND = { stance: [75, 100, 125, 150, 175], toe: [10, 25, 40], depth: [-45, -20, 0, 25], heel: [0, 1.9], style: [0, -1, 1] };
+function withStyle(c, style) {
+  if (!style) return c;
+  const r = leanRange(c), nat = posture(c, -c.depth, bottomShin(c)).lean;
+  const lean = style < 0 ? nat - 0.5 * (nat - r.min) : nat + 0.45 * (r.max - nat);
+  return Object.assign({}, c, { leanAuto: false, lean: Math.round(lean) });
+}
+function squatCandidates(s, bar) {
+  const out = [];
+  for (const stance of FIND.stance) for (const toe of FIND.toe) for (const depth of FIND.depth)
+    for (const heel of FIND.heel) for (const style of FIND.style)
+      out.push(withStyle(Object.assign({}, s, { bar, stance, toe, depth, heel, leanAuto: true }), style));
+  return out;
+}
+const SWEEPS = [
+  { key: 'depth', label: 'Depth', vals: [-50, -35, -20, -10, 0, 10, 25] },
+  { key: 'load', label: 'Load', vals: [0, 20, 40, 60, 80, 100] },
+  { key: 'bar', label: 'Bar position', vals: ['high', 'low', 'front'] },
+  { key: 'lean', label: 'Torso lean', vals: null },
+  { key: 'stance', label: 'Stance width', vals: [60, 80, 100, 120, 140, 160, 180, 200] },
+  { key: 'toe', label: 'Toe angle', vals: [0, 10, 20, 30, 40, 45] },
+  { key: 'heel', label: 'Heel lift', vals: [0, 1.27, 2.54, 3.81] },
+  { key: 'femur', label: 'Femur length', vals: [-2, -1, 0, 1, 2] },
+  { key: 'torso', label: 'Torso length', vals: [-2, -1, 0, 1, 2] },
+  { key: 'ankle', label: 'Ankle mobility', vals: [28, 32, 38, 42, 46] }
+];
+function squatSweeps(s) {
+  return SWEEPS.map(sw => {
+    let vals = sw.vals;
+    if (sw.key === 'lean') { const r = leanRange(s); vals = []; for (let i = 0; i <= 6; i++) vals.push(r.min + (r.max - r.min) * i / 6); }
+    return { key: sw.key, label: sw.label, setups: vals.map(v => {
+      const c = Object.assign({}, s, { leanAuto: true });
+      if (sw.key === 'lean') { c.leanAuto = false; c.lean = v; } else c[sw.key] = v;
+      return c;
+    }) };
+  });
+}
+
+/* ===== Deadlift model, on the same scale as the squat ===== */
+const DL_BARS = {
+  straight: { label: 'Straight bar',           dz: 0,    ahead: 0.035, shins: true },
+  trap:     { label: 'Trap bar',               dz: 0,    ahead: 0,     shins: false },
+  trapHigh: { label: 'Trap bar, high handles', dz: 0.11, ahead: 0,     shins: false }
+};
+const DL_STANDARD = { bar: 'straight', stance: 80, toe: 15, height: 0, hips: 0, round: 0, load: 80, femur: 0, torso: 0, arm: 0, ankle: 38 };
+const PLATE_R = 0.225, DL_RATIO = 1.2; /* deadlift max assumed 20% above squat max */
+
+function dlDims(s) {
+  return {
+    Ls: ANTH.shank * H, Lf: ANTH.femur * H * (1 + 0.06 * s.femur),
+    Lts: 0.288 * H * (1 + 0.05 * s.torso), La: 0.394 * H * (1 + 0.04 * (s.arm || 0)),
+    m: ANTH.mid * H, hh: ANTH.hipHalf * H, W: s.stance / 100 * ANTH.shoulder * H
+  };
+}
+const dlPlateZ = s => PLATE_R + s.height * 0.0254;
+const dlKneeH = () => (ANTH.ankleH + ANTH.shank) * H;
+
+function dlPosture(s, plateZ, thS, r) {
+  r = r || 0;
+  const d = dlDims(s), b = DL_BARS[s.bar];
+  d.Lts *= 1 - 0.10 * r; d.La += 0.03 * r;
+  const tau = rad(s.toe), th = rad(thS), gripZ = plateZ + b.dz;
+  const reach = d.Ls * Math.sin(th);
+  const kx = reach * Math.cos(tau), kz = ANTH.ankleH * H + d.Ls * Math.cos(th);
+  let ky = d.W / 2 + reach * Math.sin(tau);
+  let ab = deg(Math.asin(clamp((ky - d.hh) / d.Lf, -0.99, 0.99)));
+  if (ab > 28) ab = Math.min(28 + 0.3 * (ab - 28), 38); /* knees stay inside the feet in a wide stance */
+  const lo = d.Lf * Math.sin(rad(ab)), Lsv = d.Lf * Math.cos(rad(ab));
+  ky = d.hh + lo;
+  const copx = d.m * Math.cos(tau), copy = d.W / 2 + d.m * Math.sin(tau);
+  const wide = clamp((s.stance - 80) / 95, 0, 1);
+  const ahead = b.ahead ? (b.ahead - 0.015 * wide) * H : 0; /* shoulders sit a little ahead of a straight bar */
+  const bx = copx, sx = bx + ahead, sz = gripZ + Math.sqrt(Math.max(d.La * d.La - ahead * ahead, 0.01));
+  /* the hip is where a thigh from the knee meets a torso from the shoulder */
+  const dxk = sx - kx, dzk = sz - kz, dist = Math.max(Math.hypot(dxk, dzk), 1e-6);
+  const dd = clamp(dist, Math.abs(d.Lts - Lsv) + 1e-4, d.Lts + Lsv - 1e-4);
+  const a = (Lsv * Lsv - d.Lts * d.Lts + dd * dd) / (2 * dd), hh2 = Math.sqrt(Math.max(Lsv * Lsv - a * a, 0));
+  const ux = dxk / dist, uz = dzk / dist;
+  const hx = kx + a * ux - hh2 * uz, hz = kz + a * uz + hh2 * ux;
+  const rise = hz - kz, phi = deg(Math.asin(clamp(rise / d.Lf, -0.99, 0.99)));
+  const lean = deg(Math.atan2(sx - hx, sz - hz)), lr = rad(lean);
+  const proj = Math.sqrt(Math.max(d.Lf * d.Lf - rise * rise, 1e-6));
+  const sb = clamp(lo / proj, -0.99, 0.99), cb = Math.sqrt(1 - sb * sb), beta = deg(Math.asin(sb));
+  const D = copx - hx, dy = copy - d.hh, flat = Math.pow(Math.cos(rad(phi)), 2);
+  return {
+    thS, phi, lean, beta, D, lo, hang: ahead, round: r, slack: d.Lts + Lsv - dist,
+    kneeLever: reach - d.m + 0.03 * wide * Math.min(Math.sin(tau) / Math.sin(rad(42)), 1.1),
+    hipLever: cb * D + 0.6 * flat * sb * dy,
+    frontLever: 0.6 * dy * (1 - 0.6 * flat * sb),
+    lumbarLever: D - 0.035 * H * Math.sin(lr),
+    thorLever: bx - (hx + 0.70 * d.Lts * Math.sin(lr)),
+    kneeFlex: 90 - phi + thS, hipFlex: 90 - phi + lean,
+    pts: { ankle: [0, ANTH.ankleH * H], knee: [kx, kz], hip: [hx, hz], shoulder: [sx, sz], bar: [bx, gripZ], plate: [bx, plateZ],
+      cop: [copx, 0], kneeY: kneeDrawY(ky, d.hh, d.W / 2, hz, kz, ANTH.ankleH * H), copY: copy, hipY: d.hh, ankleY: d.W / 2 }
+  };
+}
+/* how far forward the shins can go: ankles, and a straight bar in front of them */
+function dlShinLimit(s, plateZ) {
+  const d = dlDims(s);
+  let lim = s.ankle;
+  const zb = plateZ - ANTH.ankleH * H;
+  if (DL_BARS[s.bar].shins && zb > 0.02 && plateZ < dlKneeH() - 0.01) lim = Math.min(lim, deg(Math.atan((d.m - 0.015 / Math.cos(rad(s.toe))) / zb)));
+  return Math.max(lim, 3);
+}
+function dlNaturalShin(s, plateZ) {
+  const lim = dlShinLimit(s, plateZ);
+  const nat = DL_BARS[s.bar].shins ? Math.min(0.82 * lim, 19) : Math.min(0.55 * s.ankle, 0.95 * lim);
+  return Math.max(Math.min(nat, 19 * clamp((dlKneeH() + 0.12 - plateZ) / 0.25, 0.15, 1.2)), 2);
+}
+function dlShinAt(s, z) {
+  const nat = dlNaturalShin(s, z), lim = dlShinLimit(s, z), t = clamp(s.hips / 100, -1, 1);
+  return t >= 0 ? nat + (-12 - nat) * t : nat + (Math.max(0.98 * lim, nat) - nat) * (-t);
+}
+function dlStartShin(s) { return dlShinAt(s, dlPlateZ(s)); }
+function dlLockZ(s) {
+  const d = dlDims(s), leg = d.Ls + d.Lf;
+  const g = Math.asin(clamp((d.W / 2 - d.hh) / leg, -0.9, 0.9));
+  return ANTH.ankleH * H + leg * Math.cos(g) + d.Lts - d.La - DL_BARS[s.bar].dz;
+}
+function dlRaw(s, P, ld, lb) {
+  const N = norm(), wf = widthFactor(s);
+  const e = Math.max(P.hipLever / N.hip, 0.05) * ld;
+  const rho = clamp((P.hipLever / Math.max(P.kneeLever, 0.04)) / N.ratio, 0.5, 4.5);
+  const hf = 1.7 + 0.12 * clamp(rho - 2.5, -1.5, 2); /* hamstrings carry more of the hip work in a pull */
+  const k = Math.max((P.kneeLever + 0.12 * P.hipLever * hf) / N.knee, 0.22) * ld; /* quads also have to cancel the hamstrings at the knee */
+  const a = Math.max(P.frontLever / N.front, 0.05) * ld;
+  const sp = Math.max(P.lumbarLever / N.lumbar, 0.05) * ld;
+  const t = Math.max((P.thorLever + 0.03) / N.thor, 0.2) * ld;
+  const vl = Math.pow(k, k > 1 ? 0.7 : 0.75), ham = e * hf * (1 - 0.10 * Math.max(wf, 0)) * (1 + 0.25 * P.curl), shift = 1 - 0.2 * (hf - 1);
+  return {
+    VL: vl, VM: vl * (1 + 0.04 * wf),
+    RF: Math.pow(k, 0.85) * clamp(1 - 0.15 * (rho - 1), 0.7, 1.1) * (1 - 0.10 * clamp((P.hipFlex - 115) / 35, 0, 1)),
+    GMAX: Math.pow(e, 0.9) * shift,
+    GMED: (0.5 * ld + 0.5 * e) * (1 + 0.10 * Math.max(wf, 0)),
+    ADD: 0.8 * e * addDepth(P.hipFlex) * (1 + 0.08 * wf + 0.08 * (s.toe - 25) / 25) * shift + 0.12 * a,
+    BF: ham, SEMI: ham * 1.15,
+    ES: Math.pow(sp * (1 + 0.40 * P.curl), 0.9), /* curling and uncurling the spine under load is extra work for the erectors */
+    UB: (0.4 * ld + 0.6 * t) * (1 + 0.45 * P.curl),
+    GAS: Math.pow(ld, 0.9) * (1 - 0.10 * wf) * (0.85 + 0.15 * clamp(P.kneeLever / N.kneeOnly, 0.3, 1.6)),
+    SOL: Math.pow(ld, 0.9) * (0.7 + 0.3 * Math.max(P.thS, 0) / N.shin),
+    RA: ld, OBL: ld,
+    TRAP: lb, LAT: lb * (P.hang + 0.035) / 0.095, GRIP: lb,
+    PECS: lb / 1.2, PECC: lb / 1.2, ADELT: 0.8 * lb / 1.2, TRI: 2 * lb / 1.2, BIC: 1.5 * lb / 1.2
+  };
+}
+/* peak demand from the start of the pull until the bar passes the knees */
+function dlSweep(s) {
+  const z0 = dlPlateZ(s), th0 = dlStartShin(s), r0 = clamp((s.round || 0) / 100, 0, 1);
+  const ld = (0.85 + 1.5 * DL_RATIO * s.load / 100) / (0.85 + 1.5 * 0.8), lb = DL_RATIO * s.load / 80;
+  const start = dlPosture(s, z0, th0, r0), peak = {}, pk = { knee: -1, hip: -1, lumbar: -1 };
+  const top = Math.min(dlKneeH() + 0.08, dlLockZ(s) - 0.05), zs = [z0];
+  for (let z = z0 + 0.05; z <= top; z += 0.05) zs.push(z);
+  for (const z of zs) {
+    /* the spine uncurls as the bar comes up */
+    const P = z === z0 ? start : dlPosture(s, z, dlShinAt(s, z), r0 * clamp(1 - (z - z0) / Math.max(top - z0, 0.05), 0, 1));
+    P.curl = r0;
+    const r = dlRaw(s, P, ld, lb);
+    for (const id in r) if (!(id in peak) || r[id] > peak[id]) peak[id] = r[id];
+    pk.knee = Math.max(pk.knee, P.kneeLever * ld); pk.hip = Math.max(pk.hip, P.hipLever * ld); pk.lumbar = Math.max(pk.lumbar, P.lumbarLever * ld);
+  }
+  return { peak, start, pk, th0 };
+}
+let _dlRef = null;
+function dlRef() { return _dlRef || (_dlRef = { sw: dlSweep(DL_STANDARD), travel: dlLockZ(DL_STANDARD) - dlPlateZ(DL_STANDARD) }); }
+function dlEvaluate(s) {
+  const r = dlSweep(s), R = ref(), D0 = dlRef();
+  const act = {}; let tot = 0;
+  for (const mu of MUSCLES) {
+    act[mu.id] = clamp(soften(mu.anchor * r.peak[mu.id] / R.peak[mu.id]), 0, 100);
+    tot += act[mu.id] * mu.size;
+  }
+  const share = {};
+  for (const mu of MUSCLES) share[mu.id] = 100 * act[mu.id] * mu.size / tot;
+  const travel = Math.max(dlLockZ(s) - dlPlateZ(s), 0);
+  const joints = {
+    knee: 100 * Math.max(r.pk.knee, 0) / D0.sw.pk.knee, hip: 100 * r.pk.hip / D0.sw.pk.hip, back: 100 * r.pk.lumbar / D0.sw.pk.lumbar,
+    travel, travelPct: 100 * travel / D0.travel
+  };
+  return { act, share, joints, bottom: r.start, twist: s.toe - r.start.beta, plateZ: dlPlateZ(s) };
+}
+const DL_FIND = { stance: [60, 80, 110, 150, 185], toe: [10, 25, 40], height: [-3, 0, 5, 10], hips: [-100, 0, 50, 100] };
+function dlCandidates(s, bar) {
+  const out = [];
+  for (const stance of DL_FIND.stance) for (const toe of DL_FIND.toe) for (const height of DL_FIND.height) for (const hips of DL_FIND.hips)
+    if (bar === 'straight' || hips < 100) out.push(Object.assign({}, s, { bar, stance, toe, height, hips }));
+  return out;
+}
+const DL_SWEEPS = [
+  { key: 'height', label: 'Start height', vals: [-12, -8, -4, 0, 3, 6, 9, 12] },
+  { key: 'load', label: 'Load', vals: [0, 20, 40, 60, 80, 100] },
+  { key: 'bar', label: 'Bar type', vals: ['straight', 'trap', 'trapHigh'] },
+  { key: 'hips', label: 'Hip height', vals: [-100, -50, 0, 50, 100] },
+  { key: 'round', label: 'Back rounding', vals: [0, 25, 50, 75, 100] },
+  { key: 'stance', label: 'Stance width', vals: [50, 80, 110, 140, 170, 200, 220] },
+  { key: 'toe', label: 'Toe angle', vals: [0, 10, 20, 30, 40, 50] },
+  { key: 'femur', label: 'Femur length', vals: [-2, -1, 0, 1, 2] },
+  { key: 'torso', label: 'Torso length', vals: [-2, -1, 0, 1, 2] },
+  { key: 'arm', label: 'Arm length', vals: [-2, -1, 0, 1, 2] },
+  { key: 'ankle', label: 'Ankle mobility', vals: [28, 32, 38, 42, 46] }
+];
+const dlSweeps = s => DL_SWEEPS.map(sw => ({ key: sw.key, label: sw.label, setups: sw.vals.map(v => Object.assign({}, s, { [sw.key]: v })) }));
+
+/* ===== Bench press model: built from EMG studies more directly than the squat and deadlift ===== */
+const BN_ANGLE = { decline: -15, flat: 0, inc30: 30, inc45: 45 };
+const BN_LABEL = { decline: 'Decline 15°', flat: 'Flat bench', inc30: 'Incline 30°', inc45: 'Incline 45°' };
+const BN_STANDARD = { bar: 'flat', grip: 150, arch: 25, load: 80, arm: 0 };
+const BN_KNOTS = [-15, 0, 15, 30, 45, 60];
+const BN_PATTERN = { /* activation at equal effort relative to a flat bench, and how much can be lifted at each angle */
+  PECS:  [1.00, 1.00, 0.92, 0.82, 0.70, 0.58],
+  PECC:  [0.88, 1.00, 1.04, 1.11, 1.05, 0.95],
+  ADELT: [0.92, 1.00, 1.12, 1.27, 1.35, 1.40],
+  TRI:   [1.02, 1.00, 0.93, 0.85, 0.78, 0.72],
+  BIC:   [0.95, 1.00, 1.15, 1.35, 1.50, 1.55],
+  MAX:   [1.00, 1.00, 0.885, 0.78, 0.71, 0.64]
+};
+const BN_BASE = { PECS: 85, PECC: 75, ADELT: 75, TRI: 72, BIC: 17, LAT: 14, TRAP: 8, UB: 8, GRIP: 24, RA: 7, OBL: 8, GMED: 4, RF: 4, ADD: 3, BF: 4, SEMI: 4, GAS: 3 };
+function bnLerp(arr, a) {
+  a = clamp(a, BN_KNOTS[0], BN_KNOTS[BN_KNOTS.length - 1]);
+  for (let i = 1; i < BN_KNOTS.length; i++) if (a <= BN_KNOTS[i]) {
+    const t = (a - BN_KNOTS[i - 1]) / (BN_KNOTS[i] - BN_KNOTS[i - 1]);
+    return arr[i - 1] + t * (arr[i] - arr[i - 1]);
+  }
+  return arr[arr.length - 1];
+}
+/* elbow from shoulder and hand, given the two arm lengths as seen from the side */
+function bnElbow(S, hand, a, b) {
+  const dx = hand[0] - S[0], dz = hand[1] - S[1], dist = Math.max(Math.hypot(dx, dz), 1e-6);
+  const d = clamp(dist, Math.abs(a - b) + 1e-4, a + b - 1e-4), q = (a * a - b * b + d * d) / (2 * d), h = Math.sqrt(Math.max(a * a - q * q, 0));
+  return [S[0] + (q * dx + h * dz) / dist, S[1] + (q * dz - h * dx) / dist];
+}
+/* arm geometry at the bottom, forearms stacked under the bar */
+function bnGeom(s) {
+  const al = rad(BN_ANGLE[s.bar]), arch = clamp(s.arch / 100, 0, 1), k = 1 + 0.04 * (s.arm || 0);
+  const Lu = 0.186 * H * k, Lf = 0.176 * H * k, b = ANTH.shoulder * H / 2 - 0.02;
+  const yH = s.grip / 100 * ANTH.shoulder * H / 2 + 0.04; /* hand centre, out from the midline */
+  const ct = 0.14 + 0.12 * arch; /* chest height above the shoulder joint */
+  const lat = clamp(yH - b, 0.01, 0.97 * Lu), LuS = Math.sqrt(Lu * Lu - lat * lat);
+  const C = ct * ct + Lf * Lf - 2 * Lf * ct * Math.cos(al) - LuS * LuS;
+  const xs = Math.max(-Lf * Math.sin(al) + Math.sqrt(Math.max(Math.pow(Lf * Math.sin(al), 2) - C, 0)), 0.02); /* touch point below the shoulder line */
+  const Lts = 0.288 * H, hip = [0.78, 0.54];
+  const t = [Math.cos(al), -Math.sin(al)], n = [Math.sin(al), Math.cos(al)];
+  const S = [hip[0] - Lts * t[0], hip[1] - Lts * t[1]];
+  const hand = [S[0] + xs * t[0] + ct * n[0], S[1] + xs * t[1] + ct * n[1]];
+  const elbow = bnElbow(S, hand, LuS, Lf);
+  const topZ = S[1] + Math.sqrt(Math.max(Math.pow(Lu + Lf, 2) - lat * lat, 0.01));
+  const travel = Math.max(topZ - hand[1], 0.02);
+  return { al, arch, xs, ct, lat, yH, b, eY: yH, travel, flare: deg(Math.atan2(lat, xs)), lever: Math.hypot(hand[0] - S[0], lat),
+    pts: { hip, shoulder: S, hand, elbow, top: [S[0], topZ], t, n } };
+}
+function bnCapacity(s) { /* share of a flat, medium-grip max that this setup can lift */
+  const gx = clamp((s.grip - 150) / 50, -1, 1), arch = clamp(s.arch / 100, 0, 1);
+  return bnLerp(BN_PATTERN.MAX, BN_ANGLE[s.bar]) * (1 - 0.07 * Math.max(-gx, 0)) * (1 + 0.04 * (arch - 0.25)) / (1 + 0.03 * (s.arm || 0));
+}
+let _bnRef = null;
+function bnEvaluate(s) {
+  const g = bnGeom(s), a = BN_ANGLE[s.bar], arch = g.arch;
+  const gx = clamp((s.grip - 150) / 50, -1, 1);
+  const effort = (s.load / 100) / bnCapacity(s);
+  const f = 0.08 + 0.92 * effort / 0.8;
+  const grip = (close, wide) => 1 + (gx < 0 ? -gx * (close - 1) : gx * (wide - 1));
+  const raw = Object.assign({}, BN_BASE, {
+    PECS: BN_BASE.PECS * bnLerp(BN_PATTERN.PECS, a) * grip(0.97, 1.02),
+    PECC: BN_BASE.PECC * bnLerp(BN_PATTERN.PECC, a) * grip(1.02, 0.96),
+    ADELT: BN_BASE.ADELT * bnLerp(BN_PATTERN.ADELT, a) * grip(0.94, 1.00),
+    TRI: BN_BASE.TRI * bnLerp(BN_PATTERN.TRI, a) * grip(1.02, 0.91) * (1 + 0.05 * (arch - 0.25)),
+    BIC: BN_BASE.BIC * bnLerp(BN_PATTERN.BIC, a) * grip(0.66, 1.31),
+    ES: 9 + 12 * arch, GMAX: 5 + 10 * arch, VL: 4 + 6 * arch, VM: 4 + 6 * arch, SOL: 3 + 3 * arch
+  });
+  const act = {}; let tot = 0;
+  for (const mu of MUSCLES) { act[mu.id] = clamp(soften(raw[mu.id] * f), 0, 100); tot += act[mu.id] * mu.size; }
+  const share = {};
+  for (const mu of MUSCLES) share[mu.id] = 100 * act[mu.id] * mu.size / tot;
+  if (!_bnRef) { const g0 = bnGeom(BN_STANDARD); _bnRef = { lever: g0.lever * 0.8, travel: g0.travel }; }
+  const joints = { shoulder: 100 * g.lever * (s.load / 100) / _bnRef.lever, travel: g.travel, travelPct: 100 * g.travel / _bnRef.travel, effort: 100 * effort };
+  return { act, share, joints, bottom: g, twist: 0 };
+}
+/* bench comparisons hold effort constant: the bar weight is rescaled to what each setup can lift */
+function bnAtEffort(s, c) {
+  const e0 = (s.load / 100) / bnCapacity(s);
+  c.load = clamp(e0 * bnCapacity(c) * 100, 0, 100);
+  return c;
+}
+function bnCandidates(s, bar) {
+  const out = [];
+  for (const grip of [100, 125, 150, 175, 200]) for (const arch of [0, 25, 60, 100]) out.push(bnAtEffort(s, Object.assign({}, s, { bar, grip, arch })));
+  return out;
+}
+const BN_SWEEPS = [
+  { key: 'bar', label: 'Bench angle', vals: ['decline', 'flat', 'inc30', 'inc45'] },
+  { key: 'load', label: 'Load', vals: [0, 20, 40, 60, 80, 100] },
+  { key: 'grip', label: 'Grip width', vals: [100, 120, 140, 160, 180, 200] },
+  { key: 'arch', label: 'Back arch', vals: [0, 25, 50, 75, 100] },
+  { key: 'arm', label: 'Arm length', vals: [-2, -1, 0, 1, 2] }
+];
+const bnSweeps = s => BN_SWEEPS.map(sw => ({ key: sw.key, label: sw.label, setups: sw.vals.map(v => { const c = Object.assign({}, s, { [sw.key]: v }); return sw.key === 'load' ? c : bnAtEffort(s, c); }) }));
+
+/* ===== postures through one rep, for the animation: t = 0 at the top, 1 at the bottom or start ===== */
+function squatFrame(s, t) {
+  const phiB = -s.depth, thB = bottomShin(s), ratio = thB / naturalShin(s, phiB);
+  const phi = 86 + (phiB - 86) * clamp(t, 0, 1);
+  const base = clamp(naturalShin(s, phi) * ratio, 0, ankleLimit(s));
+  const w = Math.pow(clamp((86 - phi) / 36, 0, 1), 0.8); /* shins come back to vertical as you stand up */
+  return posture(s, phi, 1.5 + (base - 1.5) * w);
+}
+function dlFrame(s, t) {
+  const z0 = dlPlateZ(s), zl = Math.max(dlLockZ(s), z0 + 0.02);
+  const r0 = clamp((s.round || 0) / 100, 0, 1), top = Math.min(dlKneeH() + 0.08, zl - 0.05);
+  /* the shins follow the bar up to the knees; once it has passed them they keep straightening to lockout and never swing forward again */
+  const zr = Math.min(Math.max(z0, dlKneeH() - 0.01 - 1e-6), zl - 0.02), thR = dlShinAt(s, zr);
+  const at = z => dlPosture(s, z, z <= zr ? dlShinAt(s, z) : thR + (1.5 - thR) * (z - zr) / (zl - zr), r0 * clamp(1 - (z - z0) / Math.max(top - z0, 0.05), 0, 1));
+  /* the rep tops out where the hips and knees run out of travel, and the bar slows over the last stretch so they arrive gently instead of snapping */
+  let zs = zl;
+  if (at(zl).slack <= 0) {
+    let lo = Math.max(z0, zl - 0.15), hi = zl;
+    for (let i = 0; i < 18; i++) { const mid = (lo + hi) / 2; if (at(mid).slack > 0) lo = mid; else hi = mid; }
+    zs = lo;
+  }
+  const c = 0.12, tt = clamp(t, 0, 1);
+  return at(zs + (z0 - zs) * tt * tt * (1 + c) / (tt + c));
+}
+function bnFrame(s, t) {
+  t = clamp(t, 0, 1); t = t * t * 1.12 / (t + 0.12); /* the bar slows into lockout so the elbows do not snap straight */
+  const g = bnGeom(s), P = g.pts, k = 1 + 0.04 * (s.arm || 0), Lu = 0.186 * H * k, Lf = 0.176 * H * k, S = P.shoulder;
+  const hand = [P.top[0] + (P.hand[0] - P.top[0]) * t, P.top[1] + (P.hand[1] - P.top[1]) * t];
+  const cg = Math.sqrt(Math.max(1 - Math.pow(g.lat / (Lu + Lf), 2), 0.01)); /* arms lean inward at lockout */
+  const a = Math.sqrt(Math.max(Lu * Lu - g.lat * g.lat, 1e-4)) * t + Lu * cg * (1 - t), b = Lf * t + Lf * cg * (1 - t);
+  /* seen from the front, the elbow moves in from under the hand to the line between shoulder and hand */
+  const eY = g.yH * t + (g.b + (g.yH - g.b) * Lu / (Lu + Lf)) * (1 - t);
+  return Object.assign({}, g, { rest: P.hand, eY, pts: Object.assign({}, P, { hand, elbow: bnElbow(S, hand, a, b) }) });
+}
+
+/* ===== registry: everything the page needs to know about each lift ===== */
+const LIFTS = {
+  squat:    { standard: STANDARD,    evaluate: evaluate,   bars: ['high', 'low', 'front'],          barLabel: v => BARS[v].label,    candidates: squatCandidates, sweeps: squatSweeps, frame: squatFrame },
+  deadlift: { standard: DL_STANDARD, evaluate: dlEvaluate, bars: ['straight', 'trap', 'trapHigh'], barLabel: v => DL_BARS[v].label, candidates: dlCandidates,    sweeps: dlSweeps,    frame: dlFrame },
+  bench:    { standard: BN_STANDARD, evaluate: bnEvaluate, bars: ['flat', 'inc30', 'inc45', 'decline'],  barLabel: v => BN_LABEL[v],      candidates: bnCandidates,    sweeps: bnSweeps,    frame: bnFrame }
+};
+/* best setup for one muscle, per bar option, holding body and load fixed */
+function findBest(lift, s, id, metric) {
+  const L = LIFTS[lift], out = [];
+  for (const bar of L.bars) {
+    let best = null;
+    for (const c of L.candidates(s, bar)) {
+      const ev = L.evaluate(c);
+      if (Math.abs(ev.twist) > 20) continue;
+      const v = ev[metric][id];
+      if (!best || v > best.value + 1e-9) best = { setup: c, value: v, ev };
+    }
+    if (best) out.push(best);
+  }
+  return out.sort((a, b) => b.value - a.value);
+}
+/* how far each variable alone can move one muscle from the current setup */
+function sensitivity(lift, s, id, metric) {
+  const L = LIFTS[lift], now = L.evaluate(s)[metric][id];
+  return L.sweeps(s).map(sw => {
+    let lo = now, hi = now;
+    for (const c of sw.setups) { const x = L.evaluate(c)[metric][id]; if (x < lo) lo = x; if (x > hi) hi = x; }
+    return { key: sw.key, label: sw.label, lo, hi, now, span: hi - lo };
+  }).sort((a, b) => b.span - a.span);
+}
+
+</script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const IN = 0.0254, SHARE_MAX = 30;
+  const depthName = v => v <= -38 ? 'Quarter squat' : v <= -12 ? 'Half squat' : v < -4 ? 'Just above parallel' : v <= 4 ? 'Parallel' : v < 15 ? 'Below parallel' : 'Deep';
+  const hipsName = v => v <= -60 ? 'Low hips' : v < -15 ? 'Slightly low' : v <= 15 ? 'Natural' : v < 60 ? 'High hips' : v < 95 ? 'Nearly stiff-leg' : 'Stiff-leg';
+  const heightName = v => v <= -9 ? 'Bar to foot level' + (v < -9 ? ', ' + (-9 - v) + ' in below' : '') : v < 0 ? (-v) + ' in deficit' : v === 0 ? 'From the floor' : v + ' in off the floor';
+  const five = (a, b) => v => [a + '% shorter', b + '% shorter', 'Average', b + '% longer', a + '% longer'][v + 2];
+  const BUILD = {
+    femur: { label: 'Femur length', min: -2, max: 2, step: 1, ticks: [[-2, 'Short'], [0, 'Average'], [2, 'Long']], fmt: five(12, 6) },
+    torso: { label: 'Torso length', min: -2, max: 2, step: 1, ticks: [[-2, 'Short'], [0, 'Average'], [2, 'Long']], fmt: five(10, 5) },
+    arm:   { label: 'Arm length', min: -2, max: 2, step: 1, ticks: [[-2, 'Short'], [0, 'Average'], [2, 'Long']], fmt: five(8, 4) },
+    ankle: { label: 'Ankle mobility', min: 28, max: 46, step: 2, ticks: [[28, 'Stiff'], [38, 'Average'], [46, 'Mobile']], fmt: v => v + '° of shin travel' }
+  };
+  const LOAD = { label: 'Load', min: 0, max: 100, step: 5, ticks: [[0, 'Bodyweight'], [50, '50%'], [80, '80%'], [100, 'Max']], fmt: v => v === 0 ? 'No bar weight' : v + '% of 1RM' };
+  const quadAvg = ev => (ev.act.VL * 9.6 + ev.act.VM * 5.6 + ev.act.RF * 2.7) / 17.9;
+  const hamAvg = ev => (ev.act.BF * 3.0 + ev.act.SEMI * 4.3) / 7.3;
+  const archName = v => v <= 5 ? 'Flat back' : v < 40 ? 'Slight arch' : v < 75 ? 'Moderate arch' : 'Big arch';
+  /* rows for the right-hand readout panel */
+  const idxRow = (label, v, std, zero) => {
+    const d = Math.round(v - 100);
+    return { label, val: Math.round(v), pct: v / 1.8, mark: true, note: v < 0.5 && zero ? zero : d === 0 ? 'Same as ' + std : Math.abs(d) + '% ' + (d > 0 ? 'more' : 'less') + ' than ' + std };
+  };
+  const travelRow = (ev, std) => { const d = Math.round(ev.joints.travelPct - 100); return { label: 'Bar travel to lockout', val: (ev.joints.travel / IN).toFixed(1) + ' in', pct: ev.joints.travel / 0.7 * 100, note: d === 0 ? 'Same as ' + std : Math.abs(d) + '% ' + (d > 0 ? 'more' : 'less') + ' than ' + std }; };
+
+  /* everything that differs between lifts on the page */
+  const UI = {
+    squat: {
+      phases: { top: 'Top', down: 'Descent', bottom: 'Bottom', up: 'Ascent', mid: 'Mid-rep' }, ends: ['Top', 'Bottom'],
+      cues: s => ({
+        top: 'Stand tall and brace, with the bar over the middle of your feet.',
+        down: 'Hips and knees bend together. The knees follow the toes and the bar stays over midfoot.',
+        bottom: 'This is the depth you set. Heels stay down and the back keeps its shape.',
+        up: 'Drive up so the hips and chest rise at the same rate.',
+        mid: 'Hips and knees bend together. The knees follow the toes and the bar stays over midfoot.'
+      }),
+      name: 'Squat', std: 'a standard squat: high bar, parallel, 80% load', jointHead: 'Joint demand, standard squat = 100', stage: 'Bottom position',
+      finderNote: 'The setup that works one muscle hardest at your current load and build, and which variables matter for it.',
+      barLabel: 'Bar position', barOpts: [['high', 'High bar'], ['low', 'Low bar'], ['front', 'Front']],
+      loadHint: 'Load is a percent of your parallel back-squat max, so every variation is compared at the same bar weight.',
+      groups: [['Bar', ['@bar', 'load', '@hint']], ['Stance', ['stance', 'toe']], ['Movement', ['depth', '@lean']], ['Footwear', ['heel']], ['Your build', ['femur', 'torso', 'ankle']]],
+      ctl: {
+        load: LOAD,
+        stance: { label: 'Stance width', min: 60, max: 200, step: 5, ticks: [[60, 'Narrow'], [100, '100%'], [150, '150%'], [200, 'Sumo']], fmt: v => v + '% of shoulder width' },
+        toe: { label: 'Toe angle', min: 0, max: 45, step: 1, ticks: [[0, 'Straight'], [15, '15°'], [30, '30°'], [45, '45°']], fmt: v => v === 0 ? 'Straight ahead' : v + '° out' },
+        depth: { label: 'Depth', min: -50, max: 25, step: 1, ticks: [[-50, 'Quarter'], [-20, 'Half'], [0, 'Parallel'], [25, 'Deep']], fmt: (v, ev) => depthName(v) + ' · knees ' + Math.round(ev.bottom.kneeFlex) + '°' },
+        heel: { label: 'Heel lift', min: 0, max: 1.5, step: 0.25, ticks: [[0, 'Flat'], [0.75, 'Lifting shoe'], [1.5, 'Plates']], get: s => Math.round(s.heel / 2.54 * 4) / 4, set: v => v * 2.54, fmt: v => v === 0 ? 'Flat' : v + ' in (' + Math.round(v * 25.4) + ' mm)' },
+        femur: BUILD.femur, torso: BUILD.torso, ankle: BUILD.ankle
+      },
+      presets: [
+        ['Standard', { bar: 'high', stance: 110, toe: 25, depth: 0, heel: 0, leanAuto: true }],
+        ['Olympic high bar', { bar: 'high', stance: 100, toe: 20, depth: 20, heel: 1.905, leanAuto: true }],
+        ['Powerlifting low bar', { bar: 'low', stance: 150, toe: 30, depth: 3, heel: 0, leanAuto: true }],
+        ['Front squat', { bar: 'front', stance: 100, toe: 20, depth: 15, heel: 1.905, leanAuto: true }],
+        ['Wide stance', { bar: 'high', stance: 180, toe: 40, depth: 0, heel: 0, leanAuto: true }],
+        ['Quarter squat', { bar: 'high', stance: 110, toe: 20, depth: -45, heel: 0, leanAuto: true }]
+      ],
+      startB: 2,
+      lifters: [
+        ['Sam Sulek', { bar: 'high', stance: 70, toe: 10, depth: 10, heel: 3.175, leanAuto: true },
+          'Narrow stance with the heels raised, which write-ups of his leg days say suits his build. Bar position, depth and the size of the heel lift are not documented; high bar, just below parallel and a 1.25 in lift are assumed.',
+          [['Generation Iron', 'https://generationiron.com/sam-sulek-leg-workout/'], ['Nutrition Shack', 'https://nutritionshack.co/blogs/workout-routines/sam-sulek-leg-workout']]],
+        ['Tom Platz', { bar: 'high', stance: 100, toe: 15, depth: 25, heel: 1.905, leanAuto: true },
+          'High bar at about shoulder width, as deep as the hips go, knees well past the toes and the torso within a few degrees of upright by his own account. Toe angle and footwear are not documented; a lifting-shoe heel is assumed.',
+          [['BoxLife', 'https://boxlifemagazine.com/quadfather-tom-platz/'], ['Fitness Volt', 'https://fitnessvolt.com/tom-platz-squatting-technique-knee-health/'], ['Old School Labs', 'https://oldschoollabs.com/mr-squat/']]],
+        ['Louie Simmons', { bar: 'high', stance: 190, toe: 35, depth: 3, heel: 0, leanAuto: true },
+          'The Westside box squat: as wide a stance as possible, knees forced out, sitting back to a box just below parallel with the bar on top of the shoulders. This tool has no box, so the shins sit further forward here than in the real lift. Toe angle is assumed.',
+          [['Westside Barbell', 'https://westside-barbell.com/blogs/the-blog/how-to-box-squat-correctly']]]
+      ],
+      mini: ev => [['Quads', quadAvg(ev)], ['Glutes', ev.act.GMAX], ['Adductors', ev.act.ADD], ['Low back', ev.act.ES]],
+      caption: (s, ev) => 'Torso ' + Math.round(ev.bottom.lean) + '° forward, shins ' + Math.round(ev.bottom.thS) + '° forward, thighs ' + Math.round(ev.bottom.beta) + '° out. The side view flattens the knees-out angle.',
+      describe: (c, ev) => [c.stance + '% stance', c.toe ? c.toe + '° toes' : 'toes straight', depthName(c.depth).toLowerCase(),
+        c.heel ? (Math.round(c.heel / 2.54 * 4) / 4) + ' in heel' : 'flat shoes', Math.round(ev.bottom.lean) + '° lean'].join(' · '),
+      rows: (s, ev) => [idxRow('Knees', ev.joints.knee, 'a standard squat'), idxRow('Hips', ev.joints.hip, 'a standard squat'), idxRow('Lower back', ev.joints.back, 'a standard squat'),
+        { label: 'Ankle range used', val: Math.round(ev.joints.ankle) + '%', pct: ev.joints.ankle, note: Math.round(ev.bottom.thS) + '° of ' + Math.round(ankleLimit(s)) + '° available' }],
+      flags: (s, ev) => {
+        const f = [];
+        if (ev.joints.ankle > 93) f.push('This uses nearly all of your ankle range. Heels tend to lift here; a heel lift or a little more lean eases it.');
+        if (s.bar === 'front' && ev.bottom.lean > BARS.front.leanMax + 0.5) f.push('That is more lean than a front rack holds. The bar would roll forward; raise the heels or stop higher.');
+        if (s.bar === 'front') f.push('People usually front squat less than they back squat. Lower the load to compare like for like.');
+        if (s.depth <= -30) f.push('Partial squats are usually loaded much heavier than this. At the same bar weight they are easier on everything.');
+        if (s.depth >= 10 && ev.hipPeakPhi > -s.depth + 5) f.push('Hip demand peaks near parallel on the way down, then eases at the very bottom as the knees take over.');
+        return f;
+      }
+    },
+    deadlift: {
+      phases: { top: 'Lockout', down: 'Lowering', bottom: 'Start', up: 'Pull', mid: 'Mid-pull' }, ends: ['Lockout', 'Start'],
+      cues: s => s.round >= 50 ? {
+        top: 'Stand tall with the bar hanging at arm’s length.',
+        down: 'Tuck the chin and curl down one segment at a time, letting the bar follow the legs.',
+        bottom: 'Bottom of the curl: spine rounded as far as you set, legs nearly straight.',
+        up: 'Uncurl from the lower back upward, finishing with the head.',
+        mid: 'The spine curls and uncurls one segment at a time while the legs stay nearly straight.'
+      } : {
+        top: 'Stand tall with hips and knees locked. No leaning back.',
+        down: 'The hips go back first. The knees bend once the bar has passed them.',
+        bottom: 'Bar over midfoot, arms straight, back set before the bar leaves its start.',
+        up: 'Push the floor away. The bar travels straight up, close to the legs.',
+        mid: 'The bar travels straight up and down, close to the legs.'
+      },
+      name: 'Deadlift', std: 'a standard deadlift: conventional stance, straight bar, from the floor, 80% load', jointHead: 'Joint demand, standard deadlift = 100', stage: 'Start position',
+      finderNote: 'The setup that works one muscle hardest at your current load and build, and which variables matter for it.',
+      barLabel: 'Bar type', barOpts: [['straight', 'Straight'], ['trap', 'Trap bar'], ['trapHigh', 'Trap, high']],
+      loadHint: 'Load is a percent of your conventional deadlift max. The tool assumes that max is about 20% above your squat max, which only matters when you compare the two lifts.',
+      groups: [['Bar', ['@bar', 'load', '@hint']], ['Stance', ['stance', 'toe']], ['Movement', ['height', 'hips', 'round']], ['Your build', ['femur', 'torso', 'arm', 'ankle']]],
+      ctl: {
+        load: LOAD,
+        stance: { label: 'Stance width', min: 50, max: 220, step: 5, ticks: [[50, 'Narrow'], [100, '100%'], [175, 'Sumo'], [220, 'Wide']], fmt: v => v + '% of shoulder width' },
+        toe: { label: 'Toe angle', min: 0, max: 50, step: 1, ticks: [[0, 'Straight'], [15, '15°'], [30, '30°'], [50, '50°']], fmt: v => v === 0 ? 'Straight ahead' : v + '° out' },
+        height: { label: 'Start height', min: -14, max: 12, step: 1, ticks: [[-14, 'Below feet'], [0, 'Floor'], [12, 'Above knee']], fmt: v => heightName(v) },
+        hips: { label: 'Hip height', min: -100, max: 100, step: 5, ticks: [[-100, 'Low'], [0, 'Natural'], [100, 'Stiff-leg']], fmt: (v, ev) => hipsName(v) + ' · knees ' + Math.round(ev.bottom.kneeFlex) + '°' },
+        round: { label: 'Back rounding', min: 0, max: 100, step: 5, ticks: [[0, 'Neutral'], [50, 'Half'], [100, 'Fully curled']], fmt: v => v === 0 ? 'Neutral spine' : v + '% rounded' },
+        femur: BUILD.femur, torso: BUILD.torso, arm: BUILD.arm, ankle: BUILD.ankle
+      },
+      presets: [
+        ['Conventional', { bar: 'straight', stance: 80, toe: 15, height: 0, hips: 0, round: 0 }],
+        ['Sumo', { bar: 'straight', stance: 175, toe: 42, height: 0, hips: 0, round: 0 }],
+        ['Trap bar', { bar: 'trap', stance: 90, toe: 15, height: 0, hips: 0, round: 0 }],
+        ['Romanian', { bar: 'straight', stance: 80, toe: 15, height: 5, hips: 85, round: 0 }],
+        ['Stiff-leg', { bar: 'straight', stance: 80, toe: 15, height: 0, hips: 100, round: 0 }],
+        ['Deficit', { bar: 'straight', stance: 80, toe: 15, height: -3, hips: 0, round: 0 }],
+        ['Block pull', { bar: 'straight', stance: 80, toe: 15, height: 8, hips: 0, round: 0 }],
+        ['Jefferson curl', { bar: 'straight', stance: 60, toe: 5, height: -9, hips: 100, round: 100, load: 30 }]
+      ],
+      startB: 1,
+      lifters: [
+        ['Eddie Hall', { bar: 'straight', stance: 105, toe: 0, height: 0, hips: 0, round: 15 },
+          'Conventional, with the feet a little wider than shoulder width and pointing straight ahead and the bar over midfoot about an inch from the shins: his own tips. A coach’s breakdown of his pull notes that the upper back rounds while the lower back stays set. The amount of rounding here is an estimate.',
+          [['Fitness Volt', 'https://fitnessvolt.com/eddie-hall-gives-3-best-tips-for-a-better-deadlift/'], ['Breaking Muscle', 'https://breakingmuscle.com/what-we-mortals-can-learn-from-eddie-halls-deadlift/']]],
+        ['Hafthor Bjornsson', { bar: 'straight', stance: 100, toe: 10, height: 0, hips: -25, round: 0 },
+          'Conventional at about shoulder width or slightly wider, toes turned slightly out, hips low and the back flat with the shoulders behind the bar: his own cues. How low the hips start is an estimate.',
+          [['BarBend', 'https://barbend.com/hafthor-bjornsson-deadlift-tips']]],
+        ['Ed Coan', { bar: 'straight', stance: 130, toe: 30, height: 0, hips: 0, round: 0 },
+          'Semi-sumo: a close sumo stance only a little wider than conventional, without dropping the hips very low or trying to stay fully upright. Width and toe angle are estimates.',
+          [['Powerlifting To Win', 'https://www.powerliftingtowin.com/?p=2926']]],
+        ['Konstantinovs', { bar: 'straight', stance: 80, toe: 10, height: 0, hips: 20, round: 30 },
+          'Konstantīns Konstantinovs pulled conventional, raw and beltless, with a visibly rounded back; writers disagree on whether only the upper back rounds. Stance width, hip height and the amount of rounding are estimates.',
+          [['Breaking Muscle', 'https://breakingmuscle.com/deadlifting-with-a-rounded-back-if-the-best-do-it-why-cant-you/']]]
+      ],
+      mini: ev => [['Quads', quadAvg(ev)], ['Glutes', ev.act.GMAX], ['Hamstrings', hamAvg(ev)], ['Low back', ev.act.ES]],
+      caption: (s, ev) => 'Torso ' + Math.round(ev.bottom.lean) + '° forward, knees bent ' + Math.round(ev.bottom.kneeFlex) + '°, thighs ' + Math.round(ev.bottom.beta) + '° out. The bar travels ' + (ev.joints.travel / IN).toFixed(1) + ' in to lockout.',
+      describe: (c, ev) => [c.stance + '% stance', c.toe ? c.toe + '° toes' : 'toes straight', heightName(c.height).toLowerCase(), hipsName(c.hips).toLowerCase(), Math.round(ev.bottom.lean) + '° lean'].join(' · '),
+      rows: (s, ev) => [idxRow('Knees', ev.joints.knee, 'a standard deadlift', 'No net demand: the knees are behind the bar'), idxRow('Hips', ev.joints.hip, 'a standard deadlift'), idxRow('Lower back', ev.joints.back, 'a standard deadlift'), travelRow(ev, 'a standard deadlift')],
+      flags: (s, ev) => {
+        const f = [];
+        if (ev.bottom.kneeLever < 0.005) f.push('The knees sit at or behind the bar here, so the quads have little to do and the hamstrings and back take over.');
+        if (s.bar !== 'straight') f.push('Some lifters pull more with a trap bar: about 8% more in one study of powerlifters, no difference in another. Adjust the load if that is you.');
+        if (s.height >= 6) f.push('Block and rack pulls are usually loaded heavier than this. At the same bar weight they are easier on everything.');
+        if (s.round >= 30 && s.load > 50) f.push('Rounded-back pulls such as the Jefferson curl are normally done with a fraction of deadlift weight: about 40% of max in the one EMG study. The model treats rounding as curling and uncurling through the rep, and has no data for a heavy pull held rounded.');
+        else if (s.round > 0) f.push('Rounded-back numbers rest on one EMG study plus geometry. Treat them as rough.');
+        if (s.bar === 'straight' && s.hips < -40) f.push('A straight bar blocks the shins, so the hips cannot drop much lower than natural. A trap bar allows a far more squat-like start.');
+        return f;
+      }
+    }
+  };
+  UI.bench = {
+    phases: { top: 'Lockout', down: 'Lowering', bottom: 'On the chest', up: 'Press', mid: 'Mid-rep' }, ends: ['Lockout', 'Chest'],
+    cues: s => ({
+      top: 'Arms locked with the bar above the shoulders, shoulder blades pulled back.',
+      down: 'Lower under control toward the touch point on the chest.',
+      bottom: 'The forearms are vertical under the bar as it touches.',
+      up: 'Press up and slightly back so the bar finishes over the shoulders.',
+      mid: 'The bar moves on a slight diagonal between the chest and the shoulders.'
+    }),
+    name: 'Bench press', defTarget: 'PECS', order: ['Chest', 'Shoulders', 'Arms', 'Back', 'Core', 'Glutes', 'Quads', 'Inner thigh', 'Hamstrings', 'Calves'],
+    std: 'a standard bench press: flat bench, medium grip, 80% load', jointHead: 'Effort and geometry', stage: 'Bottom position',
+    finderNote: 'The setup that works one muscle hardest at the same effort, with the bar weight rescaled to what each setup can lift.',
+    barLabel: 'Bench angle', barOpts: [['decline', 'Decline'], ['flat', 'Flat'], ['inc30', '30°'], ['inc45', '45°']],
+    loadHint: 'Load is a percent of your flat-bench max with a medium grip. Angles and grips you are weaker in make the same bar weight a harder effort.',
+    groups: [['Bench', ['@bar', 'load', '@hint']], ['Grip and setup', ['grip', 'arch']], ['Your build', ['arm']]],
+    ctl: {
+      load: Object.assign({}, LOAD, { step: 1, get: s => Math.round(s.load) }),
+      grip: { label: 'Grip width', min: 100, max: 200, step: 5, ticks: [[100, 'Close'], [150, '150%'], [200, 'Wide']], fmt: v => v + '% of shoulder width' },
+      arch: { label: 'Back arch', min: 0, max: 100, step: 5, ticks: [[0, 'Flat back'], [50, 'Moderate'], [100, 'Big arch']], fmt: v => archName(v) },
+      arm: BUILD.arm
+    },
+    presets: [
+      ['Standard', { bar: 'flat', grip: 150, arch: 25 }],
+      ['Close grip', { bar: 'flat', grip: 100, arch: 25 }],
+      ['Wide grip', { bar: 'flat', grip: 200, arch: 25 }],
+      ['Incline 30°', { bar: 'inc30', grip: 150, arch: 10 }],
+      ['Incline 45°', { bar: 'inc45', grip: 150, arch: 10 }],
+      ['Decline', { bar: 'decline', grip: 150, arch: 10 }],
+      ['Powerlifting arch', { bar: 'flat', grip: 190, arch: 100 }]
+    ],
+    startB: 3,
+    lifters: [
+      ['Julius Maddox', { bar: 'flat', grip: 140, arch: 50 },
+        'Flat bench with the pinkies on the knurling rings, the lower back arched, feet planted behind the knees, elbows tucked near 45° and the bar lowered to just below the chest, then pressed back toward the eyes: his own tips. The grip and arch numbers are estimates.',
+        [['Maddox’s tips, reprinted', 'https://ditillo2.blogspot.com/2019/11/bench-tips-julius-maddox-to-andrew.html']]],
+      ['Jennifer Thompson', { bar: 'flat', grip: 200, arch: 90 },
+        'Flat bench with the index fingers about twice shoulder width apart and as much arch as holds without losing leg drive, from her own article. The arch number is an estimate.',
+        [['canfitpro', 'https://www.canfitpro.com/blog/build-better-bench-press/']]],
+      ['Dorian Yates', { bar: 'decline', grip: 150, arch: 10 },
+        'He dropped the flat barbell bench, saying the front delts took over and the risk of a tear was high, and pointed to decline and low-incline pressing instead. Grip width and the decline angle are not documented.',
+        [['BarBend', 'https://barbend.com/news/dorian-yates-bodybuilders-should-not-bench-press/']]]
+    ],
+    mini: ev => [['Chest', ev.act.PECS], ['Upper chest', ev.act.PECC], ['Front delts', ev.act.ADELT], ['Triceps', ev.act.TRI]],
+    caption: (s, ev) => 'The bar touches ' + Math.round(ev.bottom.xs * 100) + ' cm below the shoulder line with the elbows ' + Math.round(ev.bottom.flare) + '° out from the torso, and travels ' + (ev.joints.travel / IN).toFixed(1) + ' in to lockout.',
+    describe: (c, ev) => [c.grip + '% grip', archName(c.arch).toLowerCase(), Math.round(c.load) + '% load', 'elbows ' + Math.round(ev.bottom.flare) + '°'].join(' · '),
+    rows: (s, ev) => [
+      { label: 'Effort', val: Math.round(ev.joints.effort) + '%', pct: ev.joints.effort, note: 'Of what this angle and grip let you lift once' },
+      travelRow(ev, 'a standard bench press'),
+      { label: 'Touch point', val: Math.round(ev.bottom.xs * 100) + ' cm', pct: ev.bottom.xs / 0.36 * 100, note: 'Below the shoulder line, toward the hips' },
+      { label: 'Elbow flare', val: Math.round(ev.bottom.flare) + '°', pct: ev.bottom.flare / 90 * 100, note: 'Upper arm out from the torso, seen from above' }
+    ],
+    flags: (s, ev) => {
+      const f = [];
+      if (ev.joints.effort > 100.5) f.push('This bar weight is about ' + Math.round(ev.joints.effort) + '% of what you could lift once in this setup. Lower the load to see a set you could finish.');
+      else if (s.bar === 'inc30' || s.bar === 'inc45') f.push('Maxes fall as the bench tilts up: about 22% lower at 30° and 29% lower at 45° in one study. The effort readout accounts for that.');
+      if (s.grip < 125) f.push('Lifters managed about 7% less for six reps with a close grip than with a medium or wide one.');
+      return f;
+    },
+    side: (lift, s, ev, gs, gev) => benchSide(s, ev, gev),
+    top: (lift, s, ev) => benchTop(s, ev),
+    front: (lift, s, ev) => benchFront(s, ev)
+  };
+  const BODY_KEYS = ['femur', 'torso', 'ankle', 'arm'];
+
+  const fresh = lift => ({ A: Object.assign({}, LIFTS[lift].standard), B: Object.assign({}, LIFTS[lift].standard, UI[lift].presets[UI[lift].startB][1]) });
+  const state = { lift: 'squat', setups: {}, active: 'A', compare: false, metric: 'act', target: 'GMAX', view2: 'front' };
+  for (const k in LIFTS) state.setups[k] = fresh(k);
+  const adopt = (dst, src, std) => { if (src) for (const k in std) if (typeof src[k] === typeof std[k]) dst[k] = src[k]; };
+  try {
+    const v2 = JSON.parse(localStorage.getItem('liftlab.v2') || 'null'), v1 = v2 ? null : JSON.parse(localStorage.getItem('squatlab.v1') || 'null');
+    const sv = v2 || v1;
+    if (sv && sv.setups) {
+      const src = v2 ? sv.setups : { squat: sv.setups };
+      for (const lift in LIFTS) for (const k of ['A', 'B']) adopt(state.setups[lift][k], src[lift] && src[lift][k], LIFTS[lift].standard);
+      if (LIFTS[sv.lift]) state.lift = sv.lift;
+      if (sv.active === 'B') state.active = 'B';
+      state.compare = !!sv.compare;
+      if (sv.metric === 'share') state.metric = 'share';
+      if (sv.view2 === 'top') state.view2 = 'top';
+      if (MUSCLES.some(m => m.id === sv.target)) state.target = sv.target;
+    }
+  } catch (e) { /* storage unavailable: start from defaults */ }
+  const save = () => { try { localStorage.setItem('liftlab.v2', JSON.stringify(state)); } catch (e) { /* fine without it */ } };
+  const cur = () => state.setups[state.lift][state.active];
+  const otherKey = () => state.active === 'A' ? 'B' : 'A';
+  const U = () => UI[state.lift], L = () => LIFTS[state.lift];
+
+  /* ---------- parts built once ---------- */
+  $('target').innerHTML = MUSCLES.map(m => '<option value="' + m.id + '">' + m.name + ' (' + m.note + ')</option>').join('');
+  const groups = [...new Set(MUSCLES.map(m => m.group))];
+  $('bars').innerHTML = groups.map(g => '<div class="mgroup" data-g="' + g + '"><h3>' + g + '</h3>' + MUSCLES.filter(m => m.group === g).map(m =>
+    '<button type="button" class="mrow" data-m="' + m.id + '"><span class="mname">' + m.name + '<small>' + m.note + (m.basis === 'model' ? ' · est.' : '') + '</small></span>' +
+    '<span class="track"><span class="fill"></span><i class="ghost"></i></span><span class="mval"></span><span class="mdelta"></span></button>').join('') + '</div>').join('');
+
+  /* body maps: shapes are drawn for the viewer's left half and mirrored */
+  const BODY = '<circle class="bd" cx="100" cy="27" r="15"/><rect class="bd" x="93" y="40" width="14" height="12" rx="3"/>' +
+    '<path class="bd" d="M64 56 Q100 46 136 56 L132 110 Q128 140 131 172 L69 172 Q72 140 68 110 Z"/>' +
+    '<path class="bd" d="M69 168 L131 168 L135 196 Q100 210 65 196 Z"/>';
+  const BODY_HALF = '<path class="bd" d="M64 56 Q50 60 48 86 L42 150 Q40 172 44 192 L54 192 Q56 170 56 150 L63 98 Z"/>' +
+    '<path class="bd" d="M65 194 Q61 242 71 294 L97 294 Q100 250 99.5 204 Q84 208 65 194 Z"/>' +
+    '<path class="bd" d="M72 294 Q66 334 78 394 L92 394 Q99 334 96.5 294 Z"/>' +
+    '<path class="bd" d="M75 394 L93 394 L95 406 Q84 411 71 406 Z"/>';
+  const FRONT = [
+    ['PECC', '<path d="M98.6 59 L74 61 Q70.5 66 71.5 72.5 L98.6 71 Z"/>'],
+    ['PECS', '<path d="M98.6 72.5 L71.6 74 Q70.5 90 79 97.5 Q90 101.5 98.6 96 Z"/>'],
+    ['ADELT', '<ellipse cx="61.5" cy="66" rx="6.2" ry="9.5" transform="rotate(18 61.5 66)"/>'],
+    ['BIC', '<ellipse cx="55" cy="103" rx="4.5" ry="16" transform="rotate(5 55 103)"/>'],
+    ['OBL', '<path d="M70.5 110 Q79 106 87 105 L87 162 Q78 166 71.5 160 Q73.5 134 70.5 110 Z"/>'],
+    ['RA', '<rect x="89.8" y="103" width="8.6" height="59" rx="4"/>'],
+    ['GRIP', '<ellipse cx="49.2" cy="156" rx="5" ry="24" transform="rotate(3 49.2 156)"/>'],
+    ['GMED', '<ellipse cx="72.5" cy="181" rx="5" ry="9"/>'],
+    ['VL', '<path d="M67.5 208 Q64.5 244 72.5 284 Q76.5 286 79 280 L79 210 Q73 204 67.5 208 Z"/>'],
+    ['RF', '<rect x="80.4" y="206" width="9" height="76" rx="4.5"/>'],
+    ['VM', '<ellipse cx="94" cy="270" rx="4.3" ry="17"/>'],
+    ['ADD', '<ellipse cx="95.6" cy="230" rx="3.4" ry="20"/>']
+  ];
+  const BACK = [
+    ['TRAP', '<path d="M100 50 L71 66 Q84 96 100 122 Q116 96 129 66 Z"/>', true],
+    ['LAT', '<path d="M69.5 88 Q71 112 75.5 136 Q83 154 90 158 L90 124 Q80 106 69.5 88 Z"/>'],
+    ['UB', '<rect x="92" y="72" width="6.4" height="50" rx="3.2"/>'],
+    ['TRI', '<ellipse cx="55" cy="103" rx="4.8" ry="18" transform="rotate(5 55 103)"/>'],
+    ['ES', '<rect x="90.6" y="127" width="7.6" height="43" rx="3.8"/>'],
+    ['GMED', '<ellipse cx="77" cy="178" rx="8.5" ry="7"/>'],
+    ['GMAX', '<path d="M67 197 Q68 188 84 189 Q99 190 99 203 Q98 217 84 218 Q69 217 67 197 Z"/>'],
+    ['BF', '<rect x="69.6" y="224" width="10.4" height="60" rx="5.2"/>'],
+    ['SEMI', '<rect x="82" y="224" width="10" height="60" rx="5"/>'],
+    ['ADD', '<ellipse cx="96" cy="240" rx="2.8" ry="17"/>'],
+    ['GAS', '<ellipse cx="84" cy="322" rx="9" ry="21"/>'],
+    ['SOL', '<ellipse cx="85" cy="364" rx="6" ry="15"/>']
+  ];
+  const MIR = ' transform="translate(200 0) scale(-1 1)"';
+  const nameOf = id => MUSCLES.find(m => m.id === id).name;
+  const mapSVG = list => BODY + BODY_HALF + '<g' + MIR + '>' + BODY_HALF + '</g>' + list.map(a =>
+    '<g class="mu" data-m="' + a[0] + '"><title>' + nameOf(a[0]) + '</title>' + a[1] + (a[2] ? '' : '<g' + MIR + '>' + a[1] + '</g>') + '</g>').join('');
+  $('mapF').innerHTML = mapSVG(FRONT);
+  $('mapB').innerHTML = mapSVG(BACK);
+
+  const heat = v => {
+    v = clamp(v, 0, 100);
+    const i = Math.min(3, Math.floor(v / 25)), t = Math.round((v - i * 25) / 25 * 100);
+    return 'color-mix(in oklab, var(--h' + (i + 1) + ') ' + t + '%, var(--h' + i + '))';
+  };
+
+  /* ---------- parts rebuilt when the lift changes ---------- */
+  function slider(id, c) {
+    return '<div class="ctl"><div class="ctl-head"><label for="' + id + '">' + c.label + '</label><output id="' + id + 'Out" for="' + id + '"></output></div>' +
+      '<input type="range" id="' + id + '" min="' + c.min + '" max="' + c.max + '" step="' + c.step + '">' +
+      '<div class="ticks">' + c.ticks.map((t, i) => {
+        const p = (t[0] - c.min) / (c.max - c.min);
+        const cls = i === 0 && p === 0 ? 'first' : (i === c.ticks.length - 1 && p === 1 ? 'last' : '');
+        return '<span class="' + cls + '" style="left:calc(8px + (100% - 16px) * ' + p.toFixed(4) + ')">' + t[1] + '</span>';
+      }).join('') + '</div></div>';
+  }
+  function buildLift() {
+    const u = U();
+    $('railCtl').innerHTML = u.groups.map(g => '<fieldset class="blk"><legend>' + g[0] + '</legend>' + g[1].map(item => {
+      if (item === '@bar') return '<div class="ctl"><div class="ctl-head"><span class="label" id="barLab">' + u.barLabel + '</span></div><div class="seg" id="bar" role="group" aria-labelledby="barLab">' +
+        u.barOpts.map(o => '<button type="button" data-bar="' + o[0] + '">' + o[1] + '</button>').join('') + '</div></div>';
+      if (item === '@hint') return '<p class="hint">' + u.loadHint + '</p>';
+      if (item === '@lean') return '<div class="ctl"><div class="ctl-head"><label for="lean">Torso lean</label><output id="leanOut" for="lean"></output></div>' +
+        '<input type="range" id="lean" min="10" max="60" step="1"><div class="row"><label class="check"><input type="checkbox" id="leanAuto" checked> Auto: let balance set it</label></div><p class="hint" id="leanHint"></p></div>';
+      return slider(item, u.ctl[item]);
+    }).join('') + '</fieldset>').join('');
+    $('presets').innerHTML = u.presets.map((p, i) => '<button type="button" class="chip" data-i="' + i + '">' + p[0] + '</button>').join('');
+    $('lifters').innerHTML = u.lifters.map((p, i) => '<button type="button" class="chip" data-i="' + i + '">' + p[0] + '</button>').join('');
+    lifterShown = null;
+    $('jointHead').textContent = u.jointHead;
+    $('endTop').textContent = u.ends[0]; $('endBot').textContent = u.ends[1];
+    document.querySelectorAll('.mgroup').forEach((el, i) => { const k = u.order ? u.order.indexOf(el.dataset.g) : i; el.style.order = k < 0 ? 99 : k; });
+    $('finderNote').textContent = u.finderNote;
+    for (const k in UI) { $('ev_' + k).hidden = k !== state.lift; $('pat_' + k).hidden = k !== state.lift; }
+    for (const b of $('lift').children) b.setAttribute('aria-pressed', b.dataset.v === state.lift);
+  }
+
+  /* ---------- drawings ---------- */
+  function headOf(ev) {
+    const P = ev.bottom.pts, lean = ev.bottom.lean, lr = rad(lean), w = clamp((lean - 60) / 40, 0, 1);
+    const hd = [(0.5 + 0.5 * w) * Math.sin(lr), (0.5 + 0.5 * w) * Math.cos(lr) + 0.5 * (1 - w)], hn = Math.hypot(hd[0], hd[1]);
+    return [P.shoulder[0] + 0.15 * hd[0] / hn, P.shoulder[1] + 0.15 * hd[1] / hn];
+  }
+  function figure(lift, s, ev, cls, sc, ox, gy) {
+    const P = ev.bottom.pts, up = (s.heel || 0) / 100 * 0.75;
+    const X = x => ox + x * sc, Y = z => gy - (z + up) * sc;
+    const head = headOf(ev), ghost = cls === 'ghostfig', curl = (ev.bottom.round || 0);
+    const seg = (a, b, w) => '<line class="' + cls + '" x1="' + X(a[0]).toFixed(1) + '" y1="' + Y(a[1]).toFixed(1) + '" x2="' + X(b[0]).toFixed(1) + '" y2="' + Y(b[1]).toFixed(1) + '" stroke-width="' + w + '"/>';
+    let torso = seg(P.hip, P.shoulder, ghost ? 2 : 15);
+    if (curl > 0.05) { /* a rounded spine arcs over the straight line from hip to shoulder */
+      const vx = P.shoulder[0] - P.hip[0], vz = P.shoulder[1] - P.hip[1], k = 0.34 * curl;
+      const cx = (P.hip[0] + P.shoulder[0]) / 2 - vz * k, cz = (P.hip[1] + P.shoulder[1]) / 2 + vx * k;
+      torso = '<path class="' + cls + '" d="M' + X(P.hip[0]).toFixed(1) + ' ' + Y(P.hip[1]).toFixed(1) + ' Q' + X(cx).toFixed(1) + ' ' + Y(cz).toFixed(1) + ' ' + X(P.shoulder[0]).toFixed(1) + ' ' + Y(P.shoulder[1]).toFixed(1) + '" stroke-width="' + (ghost ? 2 : 15) + '"/>';
+    }
+    return seg(P.ankle, P.knee, ghost ? 2 : 9) + seg(P.knee, P.hip, ghost ? 2 : 13) + torso +
+      (lift === 'deadlift' ? seg(P.shoulder, P.bar, ghost ? 2 : 6) : '') +
+      '<circle class="' + cls + '" cx="' + X(head[0]).toFixed(1) + '" cy="' + Y(head[1]).toFixed(1) + '" r="' + (0.095 * sc).toFixed(1) + '" stroke-width="' + (ghost ? 2 : 0) + '"' + (ghost ? '' : ' style="fill:var(--fig)"') + '/>' +
+      '<circle cx="' + X(P.bar[0]).toFixed(1) + '" cy="' + Y(P.bar[1]).toFixed(1) + '" r="' + (ghost ? 4 : 5.5) + '" style="fill:var(--' + (ghost ? 'accent' : 'plate') + ')"' + (ghost ? ' opacity=".7"' : '') + '/>';
+  }
+  function sideSVG(lift, s, ev, gs, gev, fit) {
+    const dl = lift === 'deadlift', sc = 175, ox = 200, gy = 298;
+    const P = ev.bottom.pts, up = (s.heel || 0) / 100 * 0.75, tau = rad(s.toe);
+    const X = x => ox + x * sc, Y = z => gy - (z + up) * sc, Y0 = z => gy - z * sc;
+    const floorZ = dl ? Math.min(0, s.height * IN) : 0, fy = Y0(floorZ), ry = fy + 16;
+    const footL = ANTH.foot * H * Math.cos(tau), heelX = X(-0.25 * footL), toeX = X(0.75 * footL);
+    const plate = dl ? P.plate : P.bar, px = X(plate[0]), py = dl ? Y0(plate[1]) : Y(plate[1]);
+    const bx = X(P.bar[0]), by = Y(P.bar[1]), kx = X(P.knee[0]), ky = Y(P.knee[1]), hx = X(P.hip[0]), hy = Y(P.hip[1]);
+    const kcm = Math.round((P.knee[0] - P.bar[0]) * 100), hcm = Math.round((P.bar[0] - P.hip[0]) * 100);
+    const lean = ev.bottom.lean, lr = rad(lean), ar = 34, f = n => n.toFixed(1);
+    /* frame: zoom in on the figure so a deep position fills the view as well as a shallow one */
+    const hr = 0.095 * sc, pr = PLATE_R * sc, x2 = Math.max(kx, bx), bot = ry + 28;
+    /* while the rep plays, the view is framed around the whole movement so it holds still */
+    let top = 1e9, left = px - pr, right = Math.max(px + pr, toeX + 10), minH = 1e9, maxK = -1e9;
+    for (const F of (fit && fit.length ? fit : [ev.bottom])) {
+      const Q = F.pts, fh = headOf({ bottom: F }), fp = dl ? Q.plate : Q.bar;
+      top = Math.min(top, (dl ? Y0(fp[1]) : Y(fp[1])) - pr, Y(fh[1]) - hr, Y(Q.hip[1]) - ar - 16);
+      minH = Math.min(minH, X(Q.hip[0])); maxK = Math.max(maxK, X(Q.knee[0]), X(Q.bar[0]));
+      right = Math.max(right, X(fh[0]) + hr);
+    }
+    left = Math.min(left, minH); right = Math.max(right, maxK);
+    if (gev) {
+      const G = gev.bottom.pts, gh = headOf(gev), gl = (gs.heel || 0) / 100 * 0.75;
+      top = Math.min(top, gy - (gh[1] + gl) * sc - hr);
+      left = Math.min(left, X(G.hip[0])); right = Math.max(right, X(G.knee[0]), X(gh[0]) + hr);
+    }
+    let z = 1, Lx = left, Rx = right;
+    for (let i = 0; i < 3; i++) {
+      Lx = Math.min(left, minH - 84 / z); Rx = Math.max(right, maxK + 88 / z);
+      z = clamp(Math.min(300 / (Rx - Lx + 12), 346 / (bot - top + 10)), 0.8, 1.6);
+    }
+    const vw = 300 / z, vh = 346 / z, vx = (Lx + Rx) / 2 - vw / 2, vy = bot - vh;
+    const fs = ' style="font-size:' + (12 / z).toFixed(1) + 'px"', fl = ' style="font-size:' + (9.5 / z).toFixed(1) + 'px"';
+    let o = '<svg viewBox="' + f(vx) + ' ' + f(vy) + ' ' + f(vw) + ' ' + f(vh) + '" xmlns="http://www.w3.org/2000/svg">';
+    o += '<line x1="' + f(vx + 6) + '" y1="' + f(fy) + '" x2="' + f(vx + vw - 6) + '" y2="' + f(fy) + '" style="stroke:var(--line)" stroke-width="2"/>';
+    if (dl && s.height < 0) o += '<rect x="' + f(heelX - 12) + '" y="' + gy + '" width="' + f(toeX - heelX + 20) + '" height="' + f(fy - gy) + '" style="fill:var(--sunk);stroke:var(--line)" stroke-width="1.5"/>';
+    if (dl && s.height > 0) o += '<rect x="' + f(px - 0.13 * sc) + '" y="' + f(Y0(s.height * IN)) + '" width="' + f(0.26 * sc) + '" height="' + f(s.height * IN * sc) + '" style="fill:var(--sunk);stroke:var(--line)" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    if (s.heel > 0) o += '<path d="M' + f(heelX - 4) + ' ' + gy + ' L' + f(heelX - 4) + ' ' + f(gy - s.heel / 100 * sc) + ' L' + f(X(0.45 * footL)) + ' ' + gy + ' Z" style="fill:var(--accent)" opacity=".55"/>';
+    o += '<circle cx="' + f(px) + '" cy="' + f(py) + '" r="' + f(pr) + '" style="fill:var(--plate);stroke:var(--plate)" fill-opacity=".07" stroke-opacity=".45" stroke-width="1.5"/>';
+    if (dl && Math.abs(by - py) > 2) o += '<line x1="' + f(px) + '" y1="' + f(py) + '" x2="' + f(bx) + '" y2="' + f(by) + '" style="stroke:var(--plate)" stroke-width="3" opacity=".6"/>';
+    o += '<line x1="' + f(bx) + '" y1="' + f(Math.min(by, py)) + '" x2="' + f(bx) + '" y2="' + f(ry) + '" style="stroke:var(--plate)" stroke-width="1.3" stroke-dasharray="4 4"/>';
+    for (const pt of [[hx, hy], [kx, ky]]) o += '<line x1="' + f(pt[0]) + '" y1="' + f(pt[1]) + '" x2="' + f(pt[0]) + '" y2="' + f(ry) + '" style="stroke:var(--ink2)" stroke-width="1" stroke-dasharray="2 3"/>';
+    if (gev) o += figure(lift, gs, gev, 'ghostfig', sc, ox, gy);
+    o += '<line class="fig" x1="' + f(heelX + 4) + '" y1="' + f(gy - 5 - (s.heel || 0) / 100 * sc) + '" x2="' + f(toeX - 4) + '" y2="' + (gy - 5) + '" stroke-width="9"/>';
+    o += figure(lift, s, ev, 'fig', sc, ox, gy);
+    for (const pt of [[kx, ky], [hx, hy], [X(0), Y(P.ankle[1])]]) o += '<circle cx="' + f(pt[0]) + '" cy="' + f(pt[1]) + '" r="3.2" style="fill:var(--surface);stroke:var(--fig)" stroke-width="1.5"/>';
+    /* lean arc, read like a goniometer at the hip */
+    o += '<line x1="' + f(hx) + '" y1="' + f(hy) + '" x2="' + f(hx) + '" y2="' + f(hy - ar - 12) + '" style="stroke:var(--ink2)" stroke-width="1" stroke-dasharray="2 3"/>';
+    if (lean <= 100) o += '<path d="M' + f(hx) + ' ' + f(hy - ar) + ' A' + ar + ' ' + ar + ' 0 0 1 ' + f(hx + ar * Math.sin(lr)) + ' ' + f(hy - ar * Math.cos(lr)) + '" style="stroke:var(--ink2)" stroke-width="1.2" fill="none"/>';
+    o += '<text class="svgtxt"' + fs + ' text-anchor="end" x="' + f(hx - 7) + '" y="' + f(hy - ar - 2) + '">' + Math.round(lean) + '° lean</text>';
+    /* ruler under the floor: how far the hips and knees sit from the bar's line */
+    o += '<path d="M' + f(hx) + ' ' + f(ry) + ' H' + f(x2) + ' M' + f(hx) + ' ' + f(ry - 4) + ' v8 M' + f(bx) + ' ' + f(ry - 5) + ' v10 M' + f(kx) + ' ' + f(ry - 4) + ' v8" style="stroke:var(--ink)" stroke-width="1.3" fill="none"/>';
+    o += '<text class="svgtxt"' + fs + ' text-anchor="end" x="' + f(hx - 6) + '" y="' + f(ry + 4 / z) + '">hip ' + hcm + ' cm</text>';
+    o += '<text class="svgtxt"' + fs + ' x="' + f(x2 + 6) + '" y="' + f(ry + 4 / z) + '">knee ' + (kcm < 0 ? '−' : '') + Math.abs(kcm) + ' cm</text>';
+    o += '<text class="svglab"' + fl + ' text-anchor="middle" x="' + f(bx) + '" y="' + f(ry + 8 + 14 / z) + '">BAR OVER MIDFOOT</text>';
+    return o + '</svg>';
+  }
+  function topSVG(lift, s, ev) {
+    const sc = 200, cx = 125, ay = 86, P = ev.bottom.pts, len = ANTH.foot * H * sc;
+    let o = '<svg viewBox="0 0 250 190" xmlns="http://www.w3.org/2000/svg">';
+    const by = ay - P.bar[0] * sc;
+    if (lift === 'deadlift' && s.bar !== 'straight') {
+      const hx = 0.33 * sc, hy = 0.27 * sc, ex = 0.56 * sc;
+      o += '<path d="M' + (cx - ex) + ' ' + by.toFixed(1) + ' L' + (cx - hx) + ' ' + (by - hy).toFixed(1) + ' H' + (cx + hx) + ' L' + (cx + ex) + ' ' + by.toFixed(1) + ' L' + (cx + hx) + ' ' + (by + hy).toFixed(1) + ' H' + (cx - hx) + ' Z" style="stroke:var(--plate)" stroke-width="3" fill="none" opacity=".5"/>';
+      for (const sg of [-1, 1]) o += '<line x1="' + (cx + sg * hx) + '" y1="' + (by - 14).toFixed(1) + '" x2="' + (cx + sg * hx) + '" y2="' + (by + 14).toFixed(1) + '" style="stroke:var(--plate)" stroke-width="5" stroke-linecap="round" opacity=".7"/>';
+    } else {
+      o += '<line x1="6" y1="' + by.toFixed(1) + '" x2="244" y2="' + by.toFixed(1) + '" style="stroke:var(--plate)" stroke-width="3" opacity=".5"/>';
+    }
+    o += '<rect x="6" y="' + (by - 9).toFixed(1) + '" width="7" height="18" rx="1.5" style="fill:var(--plate)" opacity=".5"/><rect x="237" y="' + (by - 9).toFixed(1) + '" width="7" height="18" rx="1.5" style="fill:var(--plate)" opacity=".5"/>';
+    for (const sg of [-1, 1]) {
+      const ax = cx + sg * P.ankleY * sc, kx = cx + sg * P.kneeY * sc, ky = ay - P.knee[0] * sc, hx = cx + sg * P.hipY * sc, hy = ay - P.hip[0] * sc;
+      o += '<rect x="-10" y="' + (-0.75 * len).toFixed(1) + '" width="20" height="' + len.toFixed(1) + '" rx="9" transform="translate(' + ax.toFixed(1) + ' ' + ay + ') rotate(' + (sg * s.toe) + ')" style="fill:var(--body);stroke:var(--fig)" stroke-width="1.3"/>';
+      o += '<line class="fig" x1="' + hx.toFixed(1) + '" y1="' + hy.toFixed(1) + '" x2="' + kx.toFixed(1) + '" y2="' + ky.toFixed(1) + '" stroke-width="10"/>';
+      o += '<line class="fig" x1="' + kx.toFixed(1) + '" y1="' + ky.toFixed(1) + '" x2="' + ax.toFixed(1) + '" y2="' + ay + '" stroke-width="5" opacity=".55"/>';
+      o += '<circle cx="' + kx.toFixed(1) + '" cy="' + ky.toFixed(1) + '" r="3" style="fill:var(--surface);stroke:var(--fig)" stroke-width="1.5"/>';
+    }
+    const hy = ay - P.hip[0] * sc;
+    o += '<line class="fig" x1="' + (cx - P.hipY * sc).toFixed(1) + '" y1="' + hy.toFixed(1) + '" x2="' + (cx + P.hipY * sc).toFixed(1) + '" y2="' + hy.toFixed(1) + '" stroke-width="13"/>';
+    return o + '</svg>';
+  }
+
+  /* bench press: lifter on the bench seen from the side, and from above */
+  function benchSide(s, ev, gev) {
+    const g = ev.bottom, P = g.pts, sc = 160, f = n => n.toFixed(1);
+    const X = x => 34 + x * sc, Y = z => 300 - z * sc;
+    const al = g.al, t = P.t, n = P.n, S = P.shoulder, hip = P.hip;
+    const line = (a, b, w, cls, extra) => '<line class="' + (cls || 'fig') + '" x1="' + f(X(a[0])) + '" y1="' + f(Y(a[1])) + '" x2="' + f(X(b[0])) + '" y2="' + f(Y(b[1])) + '" stroke-width="' + w + '"' + (extra || '') + '/>';
+    const rest = g.rest || P.hand;
+    const vy = clamp(Math.min(Y(P.top[1]) - PLATE_R * sc - 8, Y(rest[1]) - PLATE_R * sc - 8), 0, 150);
+    let o = '<svg viewBox="0 ' + f(vy) + ' 300 ' + f(336 - vy) + '" xmlns="http://www.w3.org/2000/svg">';
+    o += '<line x1="8" y1="300" x2="292" y2="300" style="stroke:var(--line)" stroke-width="2"/>';
+    /* bench: seat, back pad and legs */
+    const padEnd = [hip[0] - 0.06 - 0.98 * t[0], 0.45 - 0.98 * t[1]], padStart = [hip[0] - 0.06, 0.45], seatEnd = [hip[0] + 0.2, 0.45];
+    const pad = ' style="stroke:var(--line)" stroke-linecap="round"';
+    o += line(padStart, padEnd, 10, 'x', pad) + line(padStart, seatEnd, 10, 'x', pad);
+    for (const p of [[seatEnd[0] - 0.04, 0.45], [padEnd[0] + 0.12 * t[0], padEnd[1] + 0.12 * t[1]]]) o += line(p, [p[0], 0], 3, 'x', ' style="stroke:var(--line)"');
+    /* plate and bar path */
+    const hx = X(P.hand[0]), hy = Y(P.hand[1]), tx = X(P.top[0]), ty = Y(P.top[1]);
+    o += '<circle cx="' + f(hx) + '" cy="' + f(hy) + '" r="' + f(PLATE_R * sc) + '" style="fill:var(--plate);stroke:var(--plate)" fill-opacity=".07" stroke-opacity=".45" stroke-width="1.5"/>';
+    const rx = X(rest[0]), rsy = Y(rest[1]);
+    o += '<line x1="' + f(rx) + '" y1="' + f(rsy) + '" x2="' + f(tx) + '" y2="' + f(ty) + '" style="stroke:var(--plate)" stroke-width="1.3" stroke-dasharray="4 4"/>';
+    o += '<circle cx="' + f(tx) + '" cy="' + f(ty) + '" r="5" style="stroke:var(--plate)" stroke-width="1.5" fill="none"/>';
+    if (gev) {
+      const G = gev.bottom.pts;
+      o += '<path class="ghostfig" d="M' + f(X(G.shoulder[0])) + ' ' + f(Y(G.shoulder[1])) + ' L' + f(X(G.elbow[0])) + ' ' + f(Y(G.elbow[1])) + ' L' + f(X(G.hand[0])) + ' ' + f(Y(G.hand[1])) + '" stroke-width="2"/>';
+      o += '<circle cx="' + f(X(G.hand[0])) + '" cy="' + f(Y(G.hand[1])) + '" r="4" style="fill:var(--accent)" opacity=".7"/>';
+    }
+    /* body: legs, torso (lifted by the arch), head */
+    const knee = [hip[0] + 0.40, 0.56], ankle = [knee[0] - 0.02 - 0.20 * g.arch, 0.08];
+    o += line(hip, knee, 13) + line(knee, ankle, 9) + line([ankle[0] - 0.02, 0.03], [ankle[0] + 0.17, 0.03], 9);
+    const mid = [(hip[0] + S[0]) / 2 + n[0] * (0.02 + 0.10 * g.arch), (hip[1] + S[1]) / 2 + n[1] * (0.02 + 0.10 * g.arch)];
+    o += '<path class="fig" d="M' + f(X(hip[0])) + ' ' + f(Y(hip[1])) + ' Q' + f(X(mid[0])) + ' ' + f(Y(mid[1])) + ' ' + f(X(S[0])) + ' ' + f(Y(S[1])) + '" stroke-width="15"/>';
+    const head = [S[0] - 0.19 * t[0] + 0.01 * n[0], S[1] - 0.19 * t[1] + 0.01 * n[1]];
+    o += '<circle cx="' + f(X(head[0])) + '" cy="' + f(Y(head[1])) + '" r="' + f(0.095 * sc) + '" style="fill:var(--fig)"/>';
+    /* arm */
+    o += line(S, P.elbow, 8) + line(P.elbow, P.hand, 7);
+    for (const p of [S, P.elbow]) o += '<circle cx="' + f(X(p[0])) + '" cy="' + f(Y(p[1])) + '" r="3.2" style="fill:var(--surface);stroke:var(--fig)" stroke-width="1.5"/>';
+    o += '<circle cx="' + f(hx) + '" cy="' + f(hy) + '" r="5.5" style="fill:var(--plate)"/>';
+    o += '<text class="svgtxt" x="' + f(Math.max(rx, tx) + 12) + '" y="' + f((rsy + ty) / 2 + 4) + '">' + (ev.joints.travel / IN).toFixed(1) + ' in</text>';
+    o += '<text class="svglab" x="' + f(tx + 9) + '" y="' + f(ty + 3) + '">LOCKOUT</text>';
+    o += '<text class="svglab" text-anchor="middle" x="150" y="322">BAR PATH FROM CHEST TO LOCKOUT</text>';
+    return o + '</svg>';
+  }
+  function benchTop(s, ev) {
+    const g = ev.bottom, sc = 200, cx = 125, sy = 52, f = n => n.toFixed(1);
+    const by = sy + g.xs * sc, hw = g.b * sc;
+    let o = '<svg viewBox="0 0 250 190" xmlns="http://www.w3.org/2000/svg">';
+    o += '<rect x="' + f(cx - hw - 2) + '" y="' + (sy - 12) + '" width="' + f(2 * hw + 4) + '" height="134" rx="22" style="fill:var(--body);stroke:var(--fig)" stroke-width="1.3"/>';
+    o += '<circle cx="' + cx + '" cy="' + (sy - 30) + '" r="15" style="fill:var(--fig)"/>';
+    o += '<line x1="6" y1="' + f(by) + '" x2="244" y2="' + f(by) + '" style="stroke:var(--plate)" stroke-width="3" opacity=".55"/>';
+    o += '<rect x="6" y="' + f(by - 9) + '" width="7" height="18" rx="1.5" style="fill:var(--plate)" opacity=".55"/><rect x="237" y="' + f(by - 9) + '" width="7" height="18" rx="1.5" style="fill:var(--plate)" opacity=".55"/>';
+    for (const sg of [-1, 1]) {
+      const sx = cx + sg * hw, ex = cx + sg * g.yH * sc;
+      o += '<line class="fig" x1="' + f(sx) + '" y1="' + sy + '" x2="' + f(ex) + '" y2="' + f(by) + '" stroke-width="10"/>';
+      o += '<circle cx="' + f(sx) + '" cy="' + sy + '" r="3" style="fill:var(--surface);stroke:var(--fig)" stroke-width="1.5"/>';
+      o += '<rect x="' + f(ex - 8) + '" y="' + f(by - 5) + '" width="16" height="10" rx="3" style="fill:var(--surface);stroke:var(--fig)" stroke-width="1.5"/>';
+    }
+    return o + '</svg>';
+  }
+
+  /* ---------- front views ---------- */
+  function frontBar(X, yBar, yPlate, f, sc) {
+    let o = '<line x1="' + f(X(-0.78)) + '" y1="' + f(yPlate) + '" x2="' + f(X(0.78)) + '" y2="' + f(yPlate) + '" style="stroke:var(--plate)" stroke-width="3" opacity=".6"/>';
+    for (const sg of [-1, 1]) o += '<rect x="' + f(X(sg * 0.63) - 5) + '" y="' + f(yPlate - PLATE_R * sc) + '" width="10" height="' + f(2 * PLATE_R * sc) + '" rx="3" style="fill:var(--plate);stroke:var(--plate)" fill-opacity=".22" stroke-opacity=".6" stroke-width="1.2"/>';
+    return o;
+  }
+  function frontSVG(lift, s, ev) {
+    const dl = lift === 'deadlift', P = ev.bottom.pts, sc = 145, cx = 125, gy = 270, f = n => n.toFixed(1);
+    const up = (s.heel || 0) / 100 * 0.75, floorZ = dl ? Math.min(0, s.height * IN) : 0, fy = gy - floorZ * sc;
+    const X = y => cx + y * sc, Y = z => gy - (z + up) * sc, Y0 = z => gy - z * sc;
+    const sh = ANTH.shoulder * H / 2 - 0.02, head = headOf(ev), tau = rad(s.toe);
+    const kz = Y(P.knee[1]), hz = Y(P.hip[1]), sz = Y(P.shoulder[1]), az = Y(P.ankle[1]), bz = Y(P.bar[1]);
+    const line = (x1, y1, x2, y2, w, extra) => '<line class="fig" x1="' + f(x1) + '" y1="' + f(y1) + '" x2="' + f(x2) + '" y2="' + f(y2) + '" stroke-width="' + w + '"' + (extra || '') + '/>';
+    let o = '<svg viewBox="0 0 250 ' + f(fy + 36) + '" xmlns="http://www.w3.org/2000/svg">';
+    o += '<line x1="6" y1="' + f(fy) + '" x2="244" y2="' + f(fy) + '" style="stroke:var(--line)" stroke-width="2"/>';
+    if (dl && s.height < 0) o += '<rect x="' + f(X(-P.ankleY - 0.16)) + '" y="' + gy + '" width="' + f((2 * P.ankleY + 0.32) * sc) + '" height="' + f(fy - gy) + '" style="fill:var(--sunk);stroke:var(--line)" stroke-width="1.5"/>';
+    const plateY = dl ? Y0(P.plate[1]) : bz, bar = frontBar(X, bz, plateY, f, sc);
+    if (!dl) o += bar; /* a squat bar sits behind the body */
+    const footW = (0.095 * Math.cos(tau) + ANTH.foot * H * 0.75 * Math.sin(tau)) * sc;
+    for (const sg of [-1, 1]) {
+      const ax = X(sg * P.ankleY), kx = X(sg * P.kneeY), hx = X(sg * P.hipY);
+      o += '<line x1="' + f(kx) + '" y1="' + f(kz) + '" x2="' + f(kx) + '" y2="' + gy + '" style="stroke:var(--ink2)" stroke-width="1" stroke-dasharray="2 3"/>';
+      o += '<rect x="' + f(sg > 0 ? ax - 7 : ax + 7 - footW - 6) + '" y="' + (gy - 9) + '" width="' + f(footW + 6) + '" height="9" rx="4" style="fill:var(--fig)"/>';
+      o += line(ax, az, kx, kz, 8) + line(kx, kz, hx, hz, 11);
+    }
+    o += line(X(-P.hipY), hz, X(P.hipY), hz, 12) + line(cx, hz, cx, sz, 14) + line(X(-sh), sz, X(sh), sz, 11);
+    if (dl) o += bar; /* a deadlift bar hangs in front of the legs */
+    /* arms: to the bar on the back, the front rack, or hanging to the bar */
+    const front = !dl && s.bar === 'front', gripY = dl ? (s.bar !== 'straight' ? 0.33 : s.stance >= 130 ? 0.235 : 0.275) : front ? 0.24 : 0.36;
+    for (const sg of [-1, 1]) {
+      const sx = X(sg * sh), hx2 = X(sg * gripY);
+      if (dl || front) o += line(sx, sz, hx2, bz, 6);
+      else { const ex = X(sg * 0.33), ey = Math.max(sz, bz) + 0.2 * sc; o += line(sx, sz, ex, ey, 6) + line(ex, ey, hx2, bz, 6); }
+      o += '<circle cx="' + f(hx2) + '" cy="' + f(bz) + '" r="4.5" style="fill:var(--plate)"/>';
+    }
+    o += '<circle cx="' + cx + '" cy="' + f(Y(head[1])) + '" r="' + f(0.095 * sc) + '" style="fill:var(--fig)"/>';
+    for (const sg of [-1, 1]) for (const pt of [[X(sg * P.kneeY), kz], [X(sg * P.hipY), hz]]) o += '<circle cx="' + f(pt[0]) + '" cy="' + f(pt[1]) + '" r="3" style="fill:var(--surface);stroke:var(--fig)" stroke-width="1.5"/>';
+    /* ruler: feet and knees */
+    const ry = fy + 14, a1 = X(-P.ankleY), a2 = X(P.ankleY);
+    o += '<path d="M' + f(a1) + ' ' + f(ry) + ' H' + f(a2) + ' M' + f(a1) + ' ' + f(ry - 4) + ' v8 M' + f(a2) + ' ' + f(ry - 4) + ' v8" style="stroke:var(--ink)" stroke-width="1.3" fill="none"/>';
+    o += '<text class="svgtxt" text-anchor="middle" x="' + cx + '" y="' + f(ry + 17) + '">feet ' + Math.round(2 * P.ankleY * 100) + ' cm · knees ' + Math.round(2 * P.kneeY * 100) + ' cm</text>';
+    return o + '</svg>';
+  }
+  function benchFront(s, ev) {
+    const g = ev.bottom, P = g.pts, sc = 145, cx = 125, gy = 270, f = n => n.toFixed(1);
+    const X = y => cx + y * sc, Y = z => gy - z * sc, S = P.shoulder;
+    const line = (x1, y1, x2, y2, w) => '<line class="fig" x1="' + f(x1) + '" y1="' + f(y1) + '" x2="' + f(x2) + '" y2="' + f(y2) + '" stroke-width="' + w + '"/>';
+    let o = '<svg viewBox="0 0 250 306" xmlns="http://www.w3.org/2000/svg">';
+    o += '<line x1="6" y1="' + gy + '" x2="244" y2="' + gy + '" style="stroke:var(--line)" stroke-width="2"/>';
+    /* bench from the foot end: pad, legs, and the back pad when it is tilted up */
+    const padTop = Y(0.45), backTop = Y(Math.max(S[1] - 0.05, 0.45));
+    for (const sg of [-1, 1]) o += '<line x1="' + f(X(sg * 0.12)) + '" y1="' + f(padTop) + '" x2="' + f(X(sg * 0.12)) + '" y2="' + gy + '" style="stroke:var(--line)" stroke-width="3"/>';
+    o += '<rect x="' + f(X(-0.15)) + '" y="' + f(backTop) + '" width="' + f(0.30 * sc) + '" height="' + f(padTop - backTop + 7) + '" rx="3" style="fill:var(--sunk);stroke:var(--line)" stroke-width="1.5"/>';
+    /* head behind the chest, then the chest */
+    const headZ = S[1] + 0.19 * Math.sin(g.al) + 0.02, chestTop = Y(Math.max(S[1], P.hip[1]) + g.ct * Math.cos(g.al));
+    o += '<circle cx="' + cx + '" cy="' + f(Y(headZ)) + '" r="' + f(0.095 * sc) + '" style="fill:var(--fig)"/>';
+    o += '<rect x="' + f(X(-0.19)) + '" y="' + f(chestTop) + '" width="' + f(0.38 * sc) + '" height="' + f(padTop - chestTop) + '" rx="20" style="fill:var(--body);stroke:var(--fig)" stroke-width="1.5"/>';
+    const hy = Y(P.hand[1]), ey = Y(P.elbow[1]), sy = Y(S[1]);
+    o += frontBar(X, hy, hy, f, sc);
+    for (const sg of [-1, 1]) {
+      const sx = X(sg * g.b), ex = X(sg * g.eY), hx = X(sg * g.yH);
+      o += line(sx, sy, ex, ey, 8) + line(ex, ey, hx, hy, 7);
+      for (const pt of [[sx, sy], [ex, ey]]) o += '<circle cx="' + f(pt[0]) + '" cy="' + f(pt[1]) + '" r="3" style="fill:var(--surface);stroke:var(--fig)" stroke-width="1.5"/>';
+      o += '<circle cx="' + f(hx) + '" cy="' + f(hy) + '" r="4.5" style="fill:var(--plate)"/>';
+    }
+    const ry = gy + 14, h1 = X(-g.yH), h2 = X(g.yH);
+    o += '<path d="M' + f(h1) + ' ' + ry + ' H' + f(h2) + ' M' + f(h1) + ' ' + (ry - 4) + ' v8 M' + f(h2) + ' ' + (ry - 4) + ' v8" style="stroke:var(--ink)" stroke-width="1.3" fill="none"/>';
+    o += '<text class="svgtxt" text-anchor="middle" x="' + cx + '" y="' + (ry + 17) + '">hands ' + Math.round(2 * g.yH * 100) + ' cm apart</text>';
+    return o + '</svg>';
+  }
+
+  /* ---------- rep animation: the figure moves through the lift with the current settings ---------- */
+  const rep = { t: 1, playing: false, raf: 0, start: 0, phase: null, last: null };
+  const CYCLE = 4400, ease = x => x * x * (3 - 2 * x);
+  function repAt(lift, c) { /* position in the cycle -> [t, phase]; a deadlift starts at the bottom */
+    if (lift === 'deadlift') {
+      if (c < 0.08) return [1, 'bottom']; if (c < 0.48) return [1 - ease((c - 0.08) / 0.4), 'up'];
+      if (c < 0.58) return [0, 'top']; if (c < 0.95) return [ease((c - 0.58) / 0.37), 'down']; return [1, 'bottom'];
+    }
+    if (c < 0.08) return [0, 'top']; if (c < 0.48) return [ease((c - 0.08) / 0.4), 'down'];
+    if (c < 0.58) return [1, 'bottom']; if (c < 0.95) return [1 - ease((c - 0.58) / 0.37), 'up']; return [0, 'top'];
+  }
+  function drawStage() {
+    const d = rep.last; if (!d) return;
+    const u = UI[d.lift], live = rep.playing || rep.t < 0.995, isFront = state.view2 !== 'top';
+    const second = isFront ? (u.front || frontSVG) : (u.top || topSVG);
+    $('sideView').classList.toggle('wide', d.lift === 'bench');
+    for (const b of $('view2').children) b.setAttribute('aria-pressed', (b.dataset.v === 'front') === isFront);
+    if (live) {
+      const fr = LIFTS[d.lift].frame, evF = Object.assign({}, d.ev, { bottom: fr(d.s, rep.t) });
+      $('sideView').innerHTML = (u.side || sideSVG)(d.lift, d.s, evF, d.os, null, [0, 0.35, 0.7, 1].map(t => fr(d.s, t)));
+      $('topView').innerHTML = second(d.lift, d.s, evF);
+    } else {
+      $('sideView').innerHTML = (u.side || sideSVG)(d.lift, d.s, d.ev, d.os, d.base);
+      $('topView').innerHTML = second(d.lift, d.s, d.ev);
+    }
+    $('stageHead').textContent = live ? 'Through the rep' : u.stage;
+    $('sideCap').textContent = live ? 'The labels on the figure update as it moves. The muscle map and the numbers below show the peak for the whole rep.' : u.caption(d.s, d.ev);
+    const ph = rep.playing && rep.phase ? rep.phase : rep.t > 0.97 ? 'bottom' : rep.t < 0.03 ? 'top' : 'mid';
+    $('phase').textContent = u.phases[ph];
+    $('cue').textContent = u.cues(d.s)[ph];
+    $('scrub').value = Math.round(rep.t * 100);
+    $('play').textContent = rep.playing ? 'Pause' : 'Play rep';
+    $('play').setAttribute('aria-pressed', rep.playing);
+  }
+  function tick(now) {
+    if (!rep.playing) return;
+    const r = repAt(state.lift, ((now - rep.start) % CYCLE) / CYCLE);
+    rep.t = r[0]; rep.phase = r[1];
+    drawStage();
+    rep.raf = requestAnimationFrame(tick);
+  }
+  function play(on) {
+    rep.playing = on; rep.phase = null;
+    cancelAnimationFrame(rep.raf);
+    if (on) { rep.start = performance.now(); rep.raf = requestAnimationFrame(tick); }
+    drawStage();
+  }
+
+  /* ---------- update ---------- */
+  const fmtV = v => state.metric === 'act' ? Math.round(v) + '%' : v.toFixed(1) + '%';
+  let finderTimer = 0, found = [], lifterShown = null;
+
+  function update() {
+    const lift = state.lift, u = U(), s = cur(), ev = L().evaluate(s);
+    const os = state.compare ? state.setups[lift][otherKey()] : L().standard, base = L().evaluate(os);
+    const metric = state.metric, isAct = metric === 'act';
+
+    /* controls */
+    $('tabA').setAttribute('aria-pressed', state.active === 'A'); $('tabB').setAttribute('aria-pressed', state.active === 'B');
+    $('cmp').checked = state.compare;
+    $('copy').textContent = 'Copy ' + state.active + ' into ' + otherKey();
+    for (const b of $('bar').children) b.setAttribute('aria-pressed', b.dataset.bar === s.bar);
+    for (const b of $('metric').children) b.setAttribute('aria-pressed', b.dataset.v === metric);
+    const same = p => Object.keys(p).every(k => typeof p[k] === 'number' ? Math.abs(s[k] - p[k]) < 1e-3 : s[k] === p[k]);
+    [...$('presets').children].forEach((b, i) => b.setAttribute('aria-pressed', same(u.presets[i][1])));
+    let hit = -1;
+    [...$('lifters').children].forEach((b, i) => { const on = same(u.lifters[i][1]); b.setAttribute('aria-pressed', on); if (on && hit < 0) hit = i; });
+    if (lifterShown !== lift + hit) {
+      lifterShown = lift + hit;
+      const lf = u.lifters[hit];
+      $('lifterNote').innerHTML = hit < 0 ? 'Rough versions of how each lifter is reported to set up. Loading one keeps your build and bar weight.' :
+        '<b>' + lf[0] + ' style.</b> ' + lf[2] + ' Sources: ' + lf[3].map(x => '<a href="' + x[1] + '" target="_blank" rel="noopener">' + x[0] + '</a>').join(', ') + '.';
+    }
+    for (const id in u.ctl) {
+      const c = u.ctl[id], v = c.get ? c.get(s) : s[id];
+      $(id).value = v; $(id + 'Out').textContent = c.fmt(v, ev);
+    }
+    const lean = Math.round(ev.bottom.lean);
+    if (lift === 'squat') {
+      const rg = ev.range, R = $('lean');
+      R.min = Math.min(rg.min, lean); R.max = Math.max(rg.max, lean); R.value = lean; R.disabled = s.leanAuto;
+      $('leanAuto').checked = s.leanAuto;
+      $('leanOut').textContent = lean + '° from vertical' + (s.leanAuto ? ' · auto' : '');
+      $('leanHint').textContent = s.leanAuto ? 'Set by balance: the bar stays over midfoot.' : 'Possible here: ' + R.min + '° to ' + R.max + '°. Less lean pushes the knees forward; more sends the hips back.';
+      if (!s.leanAuto) s.lean = lean;
+    }
+
+    /* drawings */
+    $('whichSetup').textContent = 'Setup ' + state.active + (state.compare ? ' · dashed = ' + otherKey() : '');
+    rep.last = { lift, s, ev, os, base: state.compare ? base : null };
+    drawStage();
+
+    /* map and bars */
+    const scale = v => isAct ? v : v / SHARE_MAX * 100;
+    for (const g of document.querySelectorAll('.mu')) g.style.fill = heat(scale(ev[metric][g.dataset.m]));
+    for (const r of document.querySelectorAll('.mrow')) {
+      const id = r.dataset.m, v = ev[metric][id], b = base[metric][id], d = v - b;
+      r.querySelector('.fill').style.width = clamp(scale(v), 0, 100) + '%';
+      r.querySelector('.fill').style.background = heat(scale(v));
+      r.querySelector('.ghost').style.left = 'calc(' + clamp(scale(b), 0, 100) + '% - 1px)';
+      r.querySelector('.mval').textContent = fmtV(v);
+      const dd = r.querySelector('.mdelta'), show = Math.abs(d) >= (isAct ? 0.5 : 0.05);
+      dd.textContent = show ? (d > 0 ? '+' : '−') + (isAct ? Math.round(Math.abs(d)) : Math.abs(d).toFixed(1)) : '·';
+      dd.className = 'mdelta' + (show ? (d > 0 ? ' up' : ' down') : '');
+      r.classList.toggle('sel', id === state.target);
+    }
+    $('valHead').textContent = isAct ? '% max' : 'share';
+    $('deltaHead').textContent = state.compare ? 'vs ' + otherKey() : 'vs std';
+    $('deltaCap').textContent = 'The black tick and the last column show ' + (state.compare ? 'setup ' + otherKey() : u.std) + '.';
+    $('rampT').innerHTML = (isAct ? [0, 25, 50, 75, 100] : [0, 7.5, 15, 22.5, 30]).map(t => '<span>' + t + (isAct ? '' : '%') + '</span>').join('');
+    $('metricCap').textContent = isAct
+      ? 'Peak effort in the rep as a percent of each muscle’s maximum voluntary contraction. All three lifts share one scale. Select a muscle to target it below.'
+      : 'Each muscle’s slice of the total effort: activation times approximate muscle size. Adds up to 100%.';
+
+    /* joints */
+    $('joints').innerHTML = u.rows(s, ev).map(r => '<div class="jrow"><div class="jhead"><b>' + r.label + '</b><span>' + r.val + '</span></div>' +
+      '<div class="jtrack"><span class="jfill" style="width:' + clamp(r.pct, 0, 100) + '%"></span>' + (r.mark ? '<i class="jmark" style="left:' + (100 / 1.8).toFixed(2) + '%"></i>' : '') + '</div>' +
+      '<div class="jnote">' + r.note + '</div></div>').join('');
+    const flags = u.flags(s, ev);
+    if (Math.abs(ev.twist) > 18) flags.unshift('Your toes point ' + Math.round(Math.abs(ev.twist)) + '° ' + (ev.twist < 0 ? 'inside' : 'outside') + ' the line of your thighs, which twists the knee. Toes near ' + Math.round(ev.bottom.beta) + '° line them up.');
+    $('flags').innerHTML = flags.length ? flags.map(t => '<li>' + t + '</li>').join('') : '<li class="ok">No balance or tracking problems with this setup.</li>';
+
+    /* phone readout */
+    $('mini').innerHTML = u.mini(ev).map(a => '<div><span class="label">' + a[0] + '</span><b>' + Math.round(a[1]) + '%</b></div>').join('');
+
+    /* finder */
+    $('target').value = state.target;
+    $('nowCap').textContent = 'Now: ' + fmtV(ev[metric][state.target]) + ' in setup ' + state.active;
+    const sens = sensitivity(lift, s, state.target, metric), top = isAct ? 100 : SHARE_MAX;
+    $('sens').innerHTML = sens.map(x => '<div class="srow"><span>' + x.label + '</span><div class="strack"><span class="sspan" style="left:' + clamp(x.lo / top * 100, 0, 100) + '%;width:' + clamp(x.span / top * 100, 0, 100) + '%"></span><i class="sdot" style="left:calc(' + clamp(x.now / top * 100, 0, 100) + '% - 1px)"></i></div><span class="num">' + (isAct ? Math.round(x.lo) + '–' + Math.round(x.hi) + '%' : x.lo.toFixed(1) + '–' + x.hi.toFixed(1) + '%') + '</span></div>').join('') +
+      '<div class="saxis"><span></span><div>' + [0, 0.25, 0.5, 0.75, 1].map(t => '<span>' + (top * t) + (isAct ? '' : '%') + '</span>').join('') + '</div><span></span></div>';
+    clearTimeout(finderTimer);
+    finderTimer = setTimeout(runFinder, found.length ? 140 : 0);
+    save();
+  }
+  function runFinder() {
+    found = findBest(state.lift, cur(), state.target, state.metric);
+    $('bests').innerHTML = found.map((b, i) => '<div class="best"><div class="best-head"><b>' + L().barLabel(b.setup.bar) + '</b><span>' + fmtV(b.value) + '</span></div><p>' + U().describe(b.setup, b.ev) + '</p><button type="button" class="btn" data-i="' + i + '">Load into setup ' + state.active + '</button></div>').join('');
+  }
+
+  /* ---------- events ---------- */
+  const targets = {};
+  const setLift = v => {
+    if (!LIFTS[v] || v === state.lift) return;
+    targets[state.lift] = state.target;
+    state.lift = v; state.target = targets[v] || UI[v].defTarget || 'GMAX';
+    rep.playing = false; rep.phase = null; rep.t = 1; cancelAnimationFrame(rep.raf);
+    found = []; buildLift(); update();
+  };
+  $('lift').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setLift(b.dataset.v); });
+  $('play').addEventListener('click', () => play(!rep.playing));
+  $('view2').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.view2 = b.dataset.v; drawStage(); save(); } });
+  $('scrub').addEventListener('input', e => { rep.playing = false; rep.phase = null; cancelAnimationFrame(rep.raf); rep.t = parseFloat(e.target.value) / 100; drawStage(); });
+  $('tabA').addEventListener('click', () => { state.active = 'A'; update(); });
+  $('tabB').addEventListener('click', () => { state.active = 'B'; update(); });
+  $('cmp').addEventListener('change', e => { state.compare = e.target.checked; update(); });
+  $('copy').addEventListener('click', () => { state.setups[state.lift][otherKey()] = Object.assign({}, cur()); update(); });
+  $('reset').addEventListener('click', () => { state.setups[state.lift][state.active] = Object.assign({}, L().standard); update(); });
+  const loadPreset = p => {
+    const s = cur();
+    if (state.lift === 'deadlift' && !('load' in p) && s.round >= 30 && s.load < 50) s.load = 80;
+    Object.assign(s, p);
+    update();
+  };
+  $('presets').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) loadPreset(U().presets[+b.dataset.i][1]); });
+  $('lifters').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) loadPreset(U().lifters[+b.dataset.i][1]); });
+  $('railCtl').addEventListener('input', e => {
+    const id = e.target.id, s = cur(), v = parseFloat(e.target.value);
+    if (id === 'lean') { s.leanAuto = false; s.lean = v; }
+    else if (U().ctl[id]) {
+      const c = U().ctl[id];
+      s[id] = c.set ? c.set(v) : v;
+      /* your build carries over to the same setup slot in the other lifts */
+      if (BODY_KEYS.includes(id)) for (const k in LIFTS) state.setups[k][state.active][id] = s[id];
+    } else return;
+    update();
+  });
+  $('railCtl').addEventListener('change', e => { if (e.target.id === 'leanAuto') { cur().leanAuto = e.target.checked; update(); } });
+  $('railCtl').addEventListener('click', e => { const b = e.target.closest('[data-bar]'); if (b) { cur().bar = b.dataset.bar; update(); } });
+  $('metric').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.metric = b.dataset.v; found = []; update(); } });
+  $('target').addEventListener('change', e => { state.target = e.target.value; found = []; update(); });
+  $('bests').addEventListener('click', e => {
+    const b = e.target.closest('.btn'); if (!b || !found[+b.dataset.i]) return;
+    state.setups[state.lift][state.active] = Object.assign({}, found[+b.dataset.i].setup);
+    update();
+  });
+  const pick = id => { state.target = id; found = []; update(); };
+  $('bars').addEventListener('click', e => { const r = e.target.closest('.mrow'); if (r) pick(r.dataset.m); });
+  for (const m of [$('mapF'), $('mapB')]) m.addEventListener('click', e => { const g = e.target.closest('.mu'); if (g) pick(g.dataset.m); });
+  const hl = (id, on) => { for (const el of document.querySelectorAll('[data-m="' + id + '"]')) el.classList.toggle('hl', on); };
+  for (const root of [$('bars'), $('mapF'), $('mapB')]) {
+    root.addEventListener('mouseover', e => { const el = e.target.closest('[data-m]'); if (el) hl(el.dataset.m, true); });
+    root.addEventListener('mouseout', e => { const el = e.target.closest('[data-m]'); if (el) hl(el.dataset.m, false); });
+  }
+  buildLift();
+  update();
+})();
+
+</script>
+
+</body>
+</html>
